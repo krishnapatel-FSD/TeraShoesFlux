@@ -104,12 +104,12 @@ footer { position: relative; z-index: 5; }
 .menu .icon-btn { color: var(--surface); }
 
 /* ---------- Hero ---------- */
-.hero { position: relative; height: max(620px, 100svh); color: var(--hero-ink); }
-.hero-bg { position: absolute; inset: 0; overflow: hidden; background: radial-gradient(55% 60% at 50% 46%, color-mix(in srgb, var(--hl) 40%, var(--white)), var(--hl) 78%); }
+.hero { position: relative; height: max(620px, 100svh); overflow: hidden; color: var(--hero-ink); }
+.hero-bg { position: absolute; inset: 0; background: radial-gradient(55% 60% at 50% 46%, color-mix(in srgb, var(--hl) 40%, var(--white)), var(--hl) 78%); }
 .hero-bg::before, .hero-bg::after { content: ""; position: absolute; width: 46vmax; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(closest-side, color-mix(in srgb, var(--white) 40%, transparent), transparent); animation: drift 16s ease-in-out infinite alternate; left: -10vmax; top: -12vmax; }
 .hero-bg::after { left: auto; right: -14vmax; top: auto; bottom: -16vmax; background: radial-gradient(closest-side, color-mix(in srgb, var(--hl) 70%, var(--black) 12%), transparent); animation-duration: 20s; animation-direction: alternate-reverse; }
 @keyframes drift { to { transform: translate(18vmax, 14vmax) scale(1.2); } }
-.word { position: fixed; inset: 0; display: grid; place-items: center; pointer-events: none; user-select: none; z-index: 3; }
+.word { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; user-select: none; }
 .word span { font-family: var(--display); font-weight: 900; font-stretch: 62%; font-variation-settings: "wdth" 62; text-transform: uppercase; font-size: var(--fs-hero); line-height: .82; letter-spacing: .005em; white-space: nowrap; color: var(--hero-ink); display: inline-flex; text-shadow: 0 10px 40px color-mix(in srgb, var(--hl) 60%, var(--black) 20%); }
 .word.outline { z-index: 5; }
 /* B8: the recorded hero (no WebGL) in the 3D canvas's place, between the two headline copies */
