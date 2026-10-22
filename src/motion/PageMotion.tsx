@@ -129,18 +129,7 @@ export function PageMotion() {
         { y: 30, opacity: 0, duration: 1.1, stagger: 0.12 },
         0.6,
       );
-      // Parallax: the word drifts up and spreads as the hero scrolls away (both copies move together).
-      gsap.to(".word span", {
-        yPercent: -22,
-        letterSpacing: ".05em",
-        ease: "none",
-        scrollTrigger: {
-          trigger: "#hero",
-          start: "top top",
-          end: "bottom top",
-          scrub: true,
-        },
-      });
+      // The word stays centered without scroll parallax drift.
       splitHeadings.forEach((h) => {
         const t = gsap.timeline({
           scrollTrigger: { trigger: h, start: "top 88%" },
@@ -188,11 +177,7 @@ export function PageMotion() {
         ease: "expo.out",
         scrollTrigger: { trigger: ".buybox", start: "top 80%" },
       });
-      ScrollTrigger.create({
-        start: 0,
-        end: "max",
-        onUpdate: (s) => gsap.set("#progress", { scaleX: s.progress }),
-      });
+
       gsap.from("#foot-big span", {
         yPercent: 100,
         opacity: 0,

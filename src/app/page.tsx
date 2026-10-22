@@ -28,7 +28,6 @@ export default async function Home() {
   return (
     <CatalogueProvider value={catalogue}>
       <IconSprite />
-      <div className="progress" id="progress"></div>
       <div id="flood"></div>
       <SceneMount />
       <Header />
