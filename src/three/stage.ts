@@ -55,6 +55,7 @@ type Pose = {
   fx?: number;
   fy?: number;
   fw?: number;
+  ox?: number;
   rx: number;
   ry: number;
   rz: number;
@@ -65,11 +66,11 @@ const P: Pose[] = [
   // Hero
   { a: "#a-hero", f: 0.7, rx: 0.3, ry: 2.6, rz: -0.55, sh: 0, v: 1 },
   // Tour (B4, GB-3): upper, foam, outsole, heel. Moving between chapters is the camera move (a dolly
-  // in or out and an orbit); each then holds still while its text is shown.
-  { a: "#a-story", f: 0.95, rx: 0.06, ry: -0.05, rz: 0, sh: 1, v: 1 },
-  { a: "#a-story", f: 1, rx: -0.12, ry: 0.35, rz: 0.04, sh: 1, v: 1 },
-  { a: "#a-story", f: 0.85, rx: -1.3, ry: 0.2, rz: 0.2, sh: 0, v: 1 },
-  { a: "#a-story", f: 0.85, rx: 0.25, ry: 2.5, rz: 0, sh: 1, v: 1 },
+  // in or out and an orbit); each then holds still while its text is shown. Shifted right to prevent text overlap.
+  { a: "#a-story", f: 0.95, ox: 50, rx: 0.06, ry: -0.05, rz: 0, sh: 1, v: 1 },
+  { a: "#a-story", f: 0.96, ox: 70, rx: -0.12, ry: 0.35, rz: 0.04, sh: 1, v: 1 },
+  { a: "#a-story", f: 0.85, ox: 50, rx: -1.3, ry: 0.2, rz: 0.2, sh: 0, v: 1 },
+  { a: "#a-story", f: 0.85, ox: 50, rx: 0.25, ry: 2.5, rz: 0, sh: 1, v: 1 },
   // Product viewer
   { a: "#a-pdp", f: 0.78, rx: 0.26, ry: -0.6, rz: 0.04, sh: 1, v: 1 },
   // Above the shop (hidden)
@@ -341,12 +342,12 @@ export function createStage(
     if (p.a) {
       const r = $(p.a)!.getBoundingClientRect();
       return {
-        cx: r.left + r.width / 2,
+        cx: r.left + r.width / 2 + (p.ox ?? 0),
         cy: r.top + r.height / 2,
         w: r.width * p.f!,
       };
     }
-    return { cx: W * p.fx!, cy: H * p.fy!, w: W * p.fw! };
+    return { cx: W * p.fx! + (p.ox ?? 0), cy: H * p.fy!, w: W * p.fw! };
   };
   const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
   let mx = 0;

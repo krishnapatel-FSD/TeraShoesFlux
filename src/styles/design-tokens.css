@@ -74,7 +74,7 @@
   --fs-foot: calc(100cqi / 7.995);
   --fs-h2: clamp(40px, 5.6vw, 80px); /* section headings */
   --fs-pdp: clamp(40px, 4.6vw, 66px); /* product title */
-  --fs-step: clamp(28px, 3.2vw, 48px); /* tour chapter title */
+  --fs-step: clamp(26px, 2.8vw, 42px); /* tour chapter title */
   --fs-step-phone: clamp(26px, 7vw, 38px);
   --fs-38: 38px; /* price */
   --fs-30: 30px; /* hero price, drawer title */
