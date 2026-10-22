@@ -1,0 +1,86 @@
+{
+  "version": 1,
+  "colourways": [
+    {
+      "id": "lime",
+      "name": "Lime",
+      "shoe": { "knit": "#8ee03c", "stripes": "#e8ffc2" },
+      "highlight": "#34d27b",
+      "onHighlight": "#0b1f12",
+      "heroInk": "#ffffff",
+      "texture": "diffuseLime.jpg"
+    },
+    {
+      "id": "ember",
+      "name": "Ember",
+      "shoe": { "knit": "#ff6a2c", "stripes": "#9fe7f5" },
+      "highlight": "#ff6a2c",
+      "onHighlight": "#101216",
+      "heroInk": "#ffffff",
+      "texture": "diffuseEmber.jpg"
+    },
+    {
+      "id": "glacier",
+      "name": "Glacier",
+      "shoe": { "knit": "#8fe0ef", "stripes": "#ff6b35" },
+      "highlight": "#2fb8d0",
+      "onHighlight": "#101216",
+      "heroInk": "#ffffff",
+      "texture": "diffuseGlacier.jpg"
+    },
+    {
+      "id": "obsidian",
+      "name": "Obsidian",
+      "shoe": { "knit": "#3a404a", "stripes": "#ff6b35" },
+      "highlight": "#2b3038",
+      "onHighlight": "#ffffff",
+      "heroInk": "#ff6b35",
+      "texture": "diffuseObsidian.jpg"
+    },
+    {
+      "id": "amber",
+      "name": "Amber",
+      "shoe": { "knit": "#ffb547", "stripes": "#14181e" },
+      "highlight": "#ffb020",
+      "onHighlight": "#101216",
+      "heroInk": "#101216",
+      "texture": "diffuseAmber.jpg"
+    },
+    {
+      "id": "coral",
+      "name": "Coral",
+      "shoe": { "knit": "#f0a090", "stripes": "#ffffff" },
+      "highlight": "#ff8a76",
+      "onHighlight": "#101216",
+      "heroInk": "#ffffff",
+      "gltfVariant": 1
+    }
+  ],
+  "contrastWaivers": [
+    {
+      "colourway": "lime",
+      "pair": "heroInk on highlight",
+      "reason": "Prototype value, kept by the product owner on 22 Oct 2026 (OD-8; options in docs/assets/A4_Contrast_Options.md)"
+    },
+    {
+      "colourway": "ember",
+      "pair": "heroInk on highlight",
+      "reason": "Prototype value, kept by the product owner on 22 Oct 2026 (OD-8; options in docs/assets/A4_Contrast_Options.md)"
+    },
+    {
+      "colourway": "glacier",
+      "pair": "heroInk on highlight",
+      "reason": "Prototype value, kept by the product owner on 22 Oct 2026 (OD-8; options in docs/assets/A4_Contrast_Options.md)"
+    },
+    {
+      "colourway": "coral",
+      "pair": "heroInk on highlight",
+      "reason": "Prototype value, kept by the product owner on 22 Oct 2026 (OD-8; options in docs/assets/A4_Contrast_Options.md)"
+    },
+    {
+      "colourway": "obsidian",
+      "pair": "highlight on ink",
+      "reason": "Prototype value, kept by the product owner on 22 Oct 2026 (OD-8; options in docs/assets/A4_Contrast_Options.md)"
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+/*
+ * Tailwind's theme and utilities without its preflight reset: the prototype stylesheet relies on
+ * browser defaults (list bullets, heading margins and so on), so a reset would change the design.
+ */
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+/* The site's theme. Not named theme.css: Tailwind would mistake it for its own theme.css and drop it. */
+@import "../styles/design-tokens.css";
+@import "../styles/prototype.css";
+
+/* Utilities map onto the prototype's own variables, so they recolour with the colourway. */
+@theme inline {
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-dim: var(--dim);
+  --color-line: var(--line);
+  --color-hl: var(--hl);
+  --color-on-hl: var(--on-hl);
+  --color-hero-ink: var(--hero-ink);
+  --color-tint: var(--tint);
+  --color-error: var(--error);
+  --text-hero: var(--fs-hero);
+  --text-menu: var(--fs-menu);
+  --text-foot: var(--fs-foot);
+  --text-h2: var(--fs-h2);
+  --text-pdp: var(--fs-pdp);
+  --text-step: var(--fs-step);
+  --text-38: var(--fs-38);
+  --text-30: var(--fs-30);
+  --text-28: var(--fs-28);
+  --text-22: var(--fs-22);
+  --text-19: var(--fs-19);
+  --text-18: var(--fs-18);
+  --text-17: var(--fs-17);
+  --text-16: var(--fs-16);
+  --text-15: var(--fs-15);
+  --text-14: var(--fs-14);
+  --text-13: var(--fs-13);
+  --text-12: var(--fs-12);
+  --text-11: var(--fs-11);
+  --text-10: var(--fs-10);
+  --font-display: var(--display);
+  --font-sans: var(--body);
+  --font-mono: var(--mono);
+  --ease-house: var(--ease);
+  --container-rail: var(--rail);
+}

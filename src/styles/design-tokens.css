@@ -1,0 +1,93 @@
+/*
+ * The TeraShoes theme (A5): every colour and font size the site uses, defined once. Values are the
+ * prototype's, unchanged. Colourway colours come from tokens/colourways.json; the defaults below
+ * are Lime's (a unit test keeps them in step). 3D-scene colours live in theme.ts.
+ * `pnpm theme:check` fails if a colour is hard-coded anywhere else in src/.
+ */
+
+/* Colourway colours animate site-wide, so they are registered (initial values: Lime). */
+@property --hl {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #34d27b;
+}
+@property --on-hl {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #0b1f12;
+}
+@property --hero-ink {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #ffffff;
+}
+
+:root {
+  /* Palette */
+  --paper: #eceef1;
+  --surface: #ffffff;
+  --ink: #101216;
+  --dim: #5d6670;
+  --line: rgba(16, 18, 22, 0.1);
+  --error: #b3261e;
+  --white: #ffffff;
+  --black: #000;
+
+  /* Colourway (Lime until a colourway is selected) */
+  --hl: #34d27b;
+  --on-hl: #0b1f12;
+  --hero-ink: #ffffff;
+
+  /* Translucent white, for text and lines on ink */
+  --white-90: rgba(255, 255, 255, 0.9);
+  --white-70: rgba(255, 255, 255, 0.7);
+  --white-65: rgba(255, 255, 255, 0.65);
+  --white-60: rgba(255, 255, 255, 0.6);
+  --white-55: rgba(255, 255, 255, 0.55);
+  --white-50: rgba(255, 255, 255, 0.5);
+  --white-40: rgba(255, 255, 255, 0.4);
+  --white-20: rgba(255, 255, 255, 0.2);
+  --white-18: rgba(255, 255, 255, 0.18);
+  --white-14: rgba(255, 255, 255, 0.14);
+  --white-08: rgba(255, 255, 255, 0.08);
+
+  /* Translucent ink, for shadows, scrims and hairlines */
+  --ink-40: rgba(16, 18, 22, 0.4);
+  --ink-30: rgba(16, 18, 22, 0.3);
+  --ink-25: rgba(16, 18, 22, 0.25);
+  --ink-20: rgba(16, 18, 22, 0.2);
+  --ink-12: rgba(16, 18, 22, 0.12);
+  --ink-10: rgba(16, 18, 22, 0.1);
+
+  /* Translucent black, for soft shadows */
+  --black-25: rgba(0, 0, 0, 0.25);
+  --black-20: rgba(0, 0, 0, 0.2);
+  --black-15: rgba(0, 0, 0, 0.15);
+  --black-12: rgba(0, 0, 0, 0.12);
+
+  /* Type scale */
+  --fs-hero: clamp(96px, 19vw, 320px); /* giant hero word */
+  --fs-hero-phone: 23vw;
+  --fs-menu: clamp(48px, 10vw, 120px); /* menu links */
+  /* Footer wordmark: spans the footer column exactly ("TERASHOES" is 7.995em wide). Product-owner
+     change, 21 Oct 2026: the prototype's clamp(44px, 12.4vw, 178px) clipped it below ~1650px. */
+  --fs-foot: calc(100cqi / 7.995);
+  --fs-h2: clamp(40px, 5.6vw, 80px); /* section headings */
+  --fs-pdp: clamp(40px, 4.6vw, 66px); /* product title */
+  --fs-step: clamp(34px, 4.2vw, 62px); /* tour chapter title */
+  --fs-step-phone: clamp(30px, 8vw, 44px);
+  --fs-38: 38px; /* price */
+  --fs-30: 30px; /* hero price, drawer title */
+  --fs-28: 28px; /* band */
+  --fs-22: 22px;
+  --fs-19: 19px;
+  --fs-18: 18px;
+  --fs-17: 17px; /* lede */
+  --fs-16: 16px; /* body */
+  --fs-15: 15px;
+  --fs-14: 14px;
+  --fs-13: 13px;
+  --fs-12: 12px; /* mono labels */
+  --fs-11: 11px;
+  --fs-10: 10px;
+}

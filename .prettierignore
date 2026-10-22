@@ -1,0 +1,21 @@
+# Read-only reference and hand-written docs
+prototype/
+docs/
+README.md
+AGENTS.md
+
+# Generated
+pnpm-lock.yaml
+.next/
+next-env.d.ts
+coverage/
+playwright-report/
+test-results/
+src/lib/shopify/types/
+scripts/shopify/types/
+public/3d/
+public/hero-fallback/
+
+# Copied verbatim from the prototype: keep its formatting so diffs against it stay readable
+src/data/catalogue.ts
+src/styles/prototype.css

@@ -1,0 +1,46 @@
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# Claude Code local settings (launch.json is shared and stays tracked)
+.claude/settings.local.json
+.playwright-mcp/
+
+# Dependencies
+/node_modules
+.pnpm-debug.log*
+*.log
+
+# Next.js and Vercel
+/.next/
+/out/
+/build
+.vercel
+next-env.d.ts
+*.tsbuildinfo
+
+# Tests
+/coverage
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
+# Env files: only the example is committed
+.env*
+!.env.example
+
+# Misc
+*.pem
+
+# 3D source files (licences may forbid redistribution; see docs/assets/A1_Model_Selection.md)
+/assets-src/
+
+# Generated product photos (`pnpm assets:images`); uploaded to Shopify, not committed
+/assets-out/

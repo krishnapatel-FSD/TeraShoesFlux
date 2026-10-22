@@ -1,0 +1,376 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v4.5.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 68100,
+      "normalized": false,
+      "byteOffset": 0,
+      "bufferView": 0
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5122,
+      "count": 13540,
+      "normalized": true,
+      "byteOffset": 0,
+      "bufferView": 1
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5122,
+      "count": 13540,
+      "max": [
+        32767,
+        16842,
+        12737
+      ],
+      "min": [
+        -32767,
+        -16842,
+        -12737
+      ],
+      "normalized": true,
+      "byteOffset": 0,
+      "bufferView": 2
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5123,
+      "count": 13540,
+      "normalized": true,
+      "byteOffset": 0,
+      "bufferView": 3
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 1,
+      "byteOffset": 0,
+      "byteLength": 136200,
+      "target": 34963,
+      "extensions": {
+        "EXT_meshopt_compression": {
+          "buffer": 0,
+          "byteOffset": 0,
+          "byteLength": 26043,
+          "mode": "TRIANGLES",
+          "byteStride": 2,
+          "count": 68100
+        }
+      }
+    },
+    {
+      "buffer": 1,
+      "byteOffset": 136200,
+      "byteLength": 108320,
+      "target": 34962,
+      "byteStride": 8,
+      "extensions": {
+        "EXT_meshopt_compression": {
+          "buffer": 0,
+          "byteOffset": 26044,
+          "byteLength": 77374,
+          "mode": "ATTRIBUTES",
+          "byteStride": 8,
+          "count": 13540
+        }
+      }
+    },
+    {
+      "buffer": 1,
+      "byteOffset": 244520,
+      "byteLength": 108320,
+      "target": 34962,
+      "byteStride": 8,
+      "extensions": {
+        "EXT_meshopt_compression": {
+          "buffer": 0,
+          "byteOffset": 103420,
+          "byteLength": 59317,
+          "mode": "ATTRIBUTES",
+          "byteStride": 8,
+          "count": 13540
+        }
+      }
+    },
+    {
+      "buffer": 1,
+      "byteOffset": 352840,
+      "byteLength": 54160,
+      "target": 34962,
+      "byteStride": 4,
+      "extensions": {
+        "EXT_meshopt_compression": {
+          "buffer": 0,
+          "byteOffset": 162740,
+          "byteLength": 36146,
+          "mode": "ATTRIBUTES",
+          "byteStride": 4,
+          "count": 13540
+        }
+      }
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9985,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "textures": [
+    {
+      "sampler": 0,
+      "extensions": {
+        "EXT_texture_webp": {
+          "source": 1
+        }
+      }
+    },
+    {
+      "sampler": 0,
+      "extensions": {
+        "EXT_texture_webp": {
+          "source": 2
+        }
+      }
+    },
+    {
+      "sampler": 0,
+      "extensions": {
+        "EXT_texture_webp": {
+          "source": 0
+        }
+      }
+    },
+    {
+      "sampler": 0,
+      "extensions": {
+        "EXT_texture_webp": {
+          "source": 3
+        }
+      }
+    },
+    {
+      "sampler": 0,
+      "extensions": {
+        "EXT_texture_webp": {
+          "source": 4
+        }
+      }
+    }
+  ],
+  "images": [
+    {
+      "name": "occlusionRougnessMetalness.jpg",
+      "mimeType": "image/webp",
+      "uri": "occlusionRougnessMetalness.webp"
+    },
+    {
+      "name": "diffuseMidnight.jpg",
+      "mimeType": "image/webp",
+      "uri": "diffuseMidnight.webp"
+    },
+    {
+      "name": "normal.jpg",
+      "mimeType": "image/webp",
+      "uri": "normal.webp"
+    },
+    {
+      "name": "diffuseBeach.jpg",
+      "mimeType": "image/webp",
+      "uri": "diffuseBeach.webp"
+    },
+    {
+      "name": "diffuseStreet.jpg",
+      "mimeType": "image/webp",
+      "uri": "diffuseStreet.webp"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "shoe.bin",
+      "byteLength": 198888
+    },
+    {
+      "byteLength": 407000,
+      "extensions": {
+        "EXT_meshopt_compression": {
+          "fallback": true
+        }
+      }
+    }
+  ],
+  "materials": [
+    {
+      "name": "phong1SG",
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      },
+      "normalTexture": {
+        "index": 1
+      },
+      "occlusionTexture": {
+        "index": 2
+      }
+    },
+    {
+      "name": "phong1SG",
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 3
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      },
+      "normalTexture": {
+        "index": 1
+      },
+      "occlusionTexture": {
+        "index": 2
+      }
+    },
+    {
+      "name": "phong1SG",
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 4
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      },
+      "normalTexture": {
+        "index": 1
+      },
+      "occlusionTexture": {
+        "index": 2
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "shoe",
+      "primitives": [
+        {
+          "attributes": {
+            "NORMAL": 1,
+            "POSITION": 2,
+            "TEXCOORD_0": 3
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 0,
+          "extensions": {
+            "KHR_materials_variants": {
+              "mappings": [
+                {
+                  "material": 0,
+                  "variants": [
+                    0
+                  ]
+                },
+                {
+                  "material": 1,
+                  "variants": [
+                    1
+                  ]
+                },
+                {
+                  "material": 2,
+                  "variants": [
+                    2
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "Shoe",
+      "extras": {
+        "name": "Shoe"
+      },
+      "mesh": 0
+    },
+    {
+      "name": "g_Shoe",
+      "extras": {
+        "name": "g Shoe"
+      },
+      "children": [
+        0
+      ]
+    },
+    {
+      "name": "Shoeobj",
+      "extras": {
+        "name": "Shoe.obj"
+      },
+      "translation": [
+        0.0016104877,
+        0.07590251,
+        0.0048509985
+      ],
+      "scale": [
+        0.14893949,
+        0.14893949,
+        0.14893949
+      ],
+      "children": [
+        1
+      ]
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        2
+      ]
+    }
+  ],
+  "scene": 0,
+  "extensionsUsed": [
+    "EXT_meshopt_compression",
+    "EXT_texture_webp",
+    "KHR_materials_variants",
+    "KHR_mesh_quantization"
+  ],
+  "extensionsRequired": [
+    "EXT_meshopt_compression",
+    "EXT_texture_webp",
+    "KHR_mesh_quantization"
+  ],
+  "extensions": {
+    "KHR_materials_variants": {
+      "variants": [
+        {
+          "name": "midnight"
+        },
+        {
+          "name": "beach"
+        },
+        {
+          "name": "street"
+        }
+      ]
+    }
+  }
+}
