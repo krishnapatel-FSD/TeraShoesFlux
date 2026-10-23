@@ -21,44 +21,31 @@ preview_dir = args[2] if len(args) > 2 else None
 
 # The look: a lean adult runner (the colours are set in build-character.mts). Asset names are matched
 # by file name in MPFB's data.
-BODY = {"gender": 1.0, "age": 0.5, "muscle": 0.7, "weight": 0.42, "height": 0.72, "proportions": 1.0}
-# MakeHuman's macros alone leave a slight frame (narrow shoulders, soft chest, wide hips, a boyish
-# face). These shape targets follow the reference runner the product owner chose (a 10 s clip,
-# 23 Oct 2026): young and slim-athletic, moderate shoulders over a long torso and slim waist, a
-# slender neck, lean toned arms and thighs, defined calves, a soft oval face. Target names are
-# MPFB's (data/targets).
+BODY = {"gender": 1.0, "age": 0.45, "muscle": 0.5, "weight": 0.45, "height": 0.6, "proportions": 0.6}
+# The product owner's reference renders (23 Oct 2026): a stylised young runner of average, slim-soft
+# build, with no visible muscle definition and a slightly large head, in a loose crew-neck tee, loose
+# knee-length shorts, white crew socks and sneakers. Target names are MPFB's (data/targets).
 SHAPE = {
-    # A clear V over a long torso: shoulders wider than the hips, a flat chest, not bulky.
-    "torso-vshape-incr": 0.5,
-    "measure-shoulder-dist-incr": 0.55,
-    "measure-bust-circ-decr": 0.35,
-    "torso-muscle-pectoral-incr": 0.15,
-    "torso-muscle-dorsi-incr": 0.35,
-    "torso-scale-vert-incr": 0.2,
-    "measure-waist-circ-decr": 0.5,
-    "measure-hips-circ-decr": 0.7,
-    "stomach-pregnant-decr": 0.4,
-    # A slender, slightly longer neck.
-    "measure-neck-height-incr": 0.3,
-    "measure-neck-circ-decr": 0.2,
-    # Lean, toned arms and thighs; defined calves; a little more leg.
-    **{f"{s}-upperarm-muscle-incr": 0.4 for s in "lr"},
-    **{f"{s}-upperarm-shoulder-muscle-incr": 0.25 for s in "lr"},
-    **{f"{s}-lowerarm-muscle-incr": 0.2 for s in "lr"},
-    **{f"{s}-upperleg-muscle-incr": 0.25 for s in "lr"},
-    **{f"{s}-lowerleg-muscle-incr": 0.45 for s in "lr"},
-    **{f"{s}-upperleg-scale-vert-incr": 0.15 for s in "lr"},
-    **{f"{s}-lowerleg-scale-vert-incr": 0.15 for s in "lr"},
-    # A young, soft oval face.
-    "head-oval": 0.4,
-    "head-age-decr": 0.15,
-    "chin-prominent-incr": 0.15,
+    # A slightly large, young, soft head, as stylised characters have.
+    "head-scale-horiz-incr": 0.25,
+    "head-scale-vert-incr": 0.25,
+    "head-scale-depth-incr": 0.2,
+    "head-oval": 0.3,
+    "head-age-decr": 0.3,
+    # Average shoulders over a flat chest; slim waist and hips.
+    "measure-shoulder-dist-incr": 0.2,
+    "measure-bust-circ-decr": 0.3,
+    "measure-waist-circ-decr": 0.2,
+    "measure-hips-circ-decr": 0.5,
+    "measure-neck-circ-decr": 0.1,
+    # A runner's calves, nothing more.
+    **{f"{s}-lowerleg-muscle-incr": 0.2 for s in "lr"},
 }
 SKIN = "young_caucasian_male"
 EYES = "low-poly"
 BODYPARTS = ["eyebrow001", "eyelashes01"]
 HAIR = "short02"
-CLOTHES = ["namuhekam_male_polo_shirt", "mindfront_male_swimming_trunks_01", "punkduck_running_shoes_01"]
+CLOTHES = ["elvs_crude_t-shirt_male", "elvs_male_swim_shorts1", "punkduck_running_shoes_01"]
 # Library clip → site clip: standing at rest, jogging while the page scrolls, a sprint on a colour change.
 CLIPS = {"Idle_Loop": "idle", "Jog_Fwd_Loop": "run", "Sprint_Loop": "swing"}
 
@@ -116,9 +103,37 @@ hidden = [v for v in mesh.verts if (shorts.matrix_world @ v.co).z > hem + 0.07]
 bmesh.ops.delete(mesh, geom=hidden, context="VERTS")
 mesh.to_mesh(shorts.data)
 mesh.free()
-# His shoulders and back would push past the shirt as he moves: it sits a few millimetres out.
-push = shirt.modifiers.new("Over the muscles", "DISPLACE")
-push.strength, push.mid_level = 0.004, 0
+# White crew socks: none of the asset packs has socks, so they're the lower legs' own surface, from
+# the shoes up a hand's width, set a few millimetres out. They keep the legs' skinning, so they move
+# with them.
+shoes = next(o for o in rig.children if CLOTHES[2] in o.name)
+sock_top = max((shoes.matrix_world @ v.co).z for v in shoes.data.vertices) + 0.11
+socks = human.copy()
+socks.data = human.data.copy()
+socks.name = socks.data.name = "Human.socks"
+for collection in human.users_collection:
+    collection.objects.link(socks)
+mesh = bmesh.new()
+mesh.from_mesh(socks.data)
+above = [f for f in mesh.faces if any((socks.matrix_world @ v.co).z > sock_top for v in f.verts)]
+bmesh.ops.delete(mesh, geom=above, context="FACES")
+bmesh.ops.delete(mesh, geom=[v for v in mesh.verts if not v.link_faces], context="VERTS")
+mesh.normal_update()
+for v in mesh.verts:
+    v.co += v.normal * 0.003
+mesh.to_mesh(socks.data)
+mesh.free()
+socks.data.materials.clear()
+sock_material = bpy.data.materials.new("Human.socks")
+sock_material.use_nodes = True
+bsdf = sock_material.node_tree.nodes["Principled BSDF"]
+bsdf.inputs["Base Color"].default_value = (0.9, 0.9, 0.88, 1)
+bsdf.inputs["Roughness"].default_value = 0.9
+socks.data.materials.append(sock_material)
+# The reference's tee is loose and boxy, standing off the body: the tee is set out from it (which
+# also keeps his shoulders from showing through as he moves).
+push = shirt.modifiers.new("Loose fit", "DISPLACE")
+push.strength, push.mid_level = 0.016, 0
 bpy.context.view_layer.objects.active = shirt
 bpy.ops.object.modifier_move_to_index(modifier=push.name, index=0)
 

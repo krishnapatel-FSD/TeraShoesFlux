@@ -6,7 +6,7 @@
 //
 // Blender (character_mpfb.py) generates the runner, dresses him, and retargets the idle, jog and sprint
 // clips from Quaternius; gltf-transform then colours his kit, compresses it (Meshopt geometry; WebP
-// textures, colour at 1024 px and detail maps at 256 px) and the result is checked against A8's
+// textures, colour at 512 px and detail maps at 256 px) and the result is checked against A8's
 // budget: under 2 MB, with the idle and swing clips.
 //   pnpm assets:character --dummy   builds the test dummy (character_dummy.py) into
 //                                   e2e/fixtures/character-dummy.glb instead
@@ -96,8 +96,8 @@ for (const m of doc.getRoot().listMaterials()) {
 // The shoes keep their texture, with their yellow accents marked in its unused alpha channel (accent
 // at half alpha), so the site can colour the upper and the accents separately (heroCharacter.ts).
 const KIT: { match: string; tint?: string; accents?: boolean }[] = [
-  { match: "polo", tint: SCENE.athlete.shirt },
-  { match: "trunks", tint: SCENE.athlete.shorts },
+  { match: "t-shirt", tint: SCENE.athlete.shirt },
+  { match: "shorts", tint: SCENE.athlete.shorts },
   { match: "running_shoes", accents: true },
 ];
 for (const m of doc.getRoot().listMaterials()) {
@@ -142,13 +142,14 @@ for (const m of doc.getRoot().listMaterials()) {
 await doc.transform(
   dedup(),
   prune(),
-  // The character is at most about half the hero's height on screen: colour textures keep 1024 px,
-  // the detail maps (normal, specular, gloss) drop to 256 px, where their difference can't be seen.
+  // The character is at most about 300 px tall on screen: colour textures at 512 px and detail maps
+  // (normal, specular, gloss) at 256 px show no difference there, and uploading 1024 px ones to the
+  // GPU held the frame rate under 50 fps for the two seconds after the intro.
   textureCompress({
     encoder: sharp,
     targetFormat: "webp",
     slots: /^baseColor/,
-    resize: [1024, 1024],
+    resize: [512, 512],
     quality: 80,
   }),
   textureCompress({

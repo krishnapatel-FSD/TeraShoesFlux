@@ -213,6 +213,8 @@ export function createStage(
     return { shirt: p.b, shoe: p.a, accent: p.b };
   };
   let characterDue = false;
+  let introOver = () => {};
+  const introDone = new Promise<void>((r) => (introOver = r));
   const appear = { v: 0 };
   const loadCharacter = () => {
     characterDue = false;
@@ -374,13 +376,26 @@ export function createStage(
         duration: reduce ? 0 : 1.8,
         ease: "elastic.out(1, .55)",
         delay: reduce ? 0 : 0.5,
-        onComplete: () => void (characterDue = true),
+        onComplete: () => {
+          characterDue = true;
+          introOver();
+        },
       }),
     );
     for (const p of variants) if (p !== first) await loadVariant(p);
     for (const p of activeCatalogue().products) await ensure(p.id);
     if (disposed) return;
     if (mats[current()]) apply(current());
+    // Not during the intro, nor while the runner gets ready just after it: the thumbnails are for
+    // further down the page, so they wait for the intro, a moment more, and an idle browser.
+    await introDone;
+    await new Promise((r) => setTimeout(r, reduce ? 0 : 2200));
+    await new Promise((r) =>
+      "requestIdleCallback" in window
+        ? requestIdleCallback(r, { timeout: 2000 })
+        : setTimeout(r, 0),
+    );
+    if (disposed) return;
     void makeThumbs();
   }
 
@@ -673,9 +688,10 @@ export function createStage(
   }
 
   /**
-   * Renders each colourway once into a 480×300 image for swatches, cards, bag and search. One
-   * colourway per frame: all six in one frame (each uploading its textures and encoding an image)
-   * froze the page for about a second, which also tripped the slow-device check (B7).
+   * Renders each colourway once into a 480×300 image for swatches, cards, bag and search, one
+   * colourway a frame with a pause between them, so the page keeps its frame rate. All six in one
+   * frame froze the page for about a second, which also tripped the slow-device check (B7); six
+   * frames in a row still dropped it to about 20 fps for a second.
    */
   async function makeThumbs() {
     const cw = renderer.domElement.width;
@@ -689,8 +705,11 @@ export function createStage(
     out.height = 300;
     const o2 = out.getContext("2d")!;
     const thumbs: Record<string, string> = {};
+    const nextFrame = () => new Promise((r) => requestAnimationFrame(r));
+    mark("thumbs-start");
     for (const p of activeCatalogue().products) {
-      await new Promise((r) => requestAnimationFrame(r));
+      await new Promise((r) => setTimeout(r, 250));
+      await nextFrame();
       if (disposed) return;
       // The scene as it is, restored straight after, so the frame itself renders as normal.
       const keep = shown;
@@ -744,6 +763,7 @@ export function createStage(
       if (character) character.root.visible = characterWas;
       place(S.a, S.turn + S.drag);
     }
+    mark("thumbs-done");
     refreshImages(thumbs);
   }
 

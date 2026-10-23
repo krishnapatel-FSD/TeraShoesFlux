@@ -15,7 +15,7 @@
 | A3 Recolour | ✅ Decided: texture recolours | One colour texture per colourway, plus the model's built-in "beach" variant for Coral | — (the shader is parked groundwork) |
 | A6 Lighting | ✅ Approved (22 Oct 2026): within 3% of a path-traced reference | `STUDIO_LIGHTS` in `src/three/shoeAssets.ts`; `pnpm assets:lighting` ([A6_Lighting_Check.md](A6_Lighting_Check.md)) | — |
 | A7 Props | ✅ Components | Tennis ball, racket, shuttlecock, paddle in `src/three/props/` (see `/dev/props`) | Designs checked against the latest prototype (OD-1), prop per colourway (OD-7) |
-| A8 Character | ✅ Done | MakeHuman (MPFB2) + Quaternius UAL (idle, jog, sprint) → `public/3d/character/character.glb`, 0.96 MB (`pnpm assets:character`) | — |
+| A8 Character | ✅ Done | MakeHuman (MPFB2) + Quaternius UAL (idle, jog, sprint) → `public/3d/character/character.glb`, 0.67 MB (`pnpm assets:character`) | — |
 
 ## The model
 
@@ -75,16 +75,16 @@ pnpm assets:validate   # glTF Validator + budgets on everything in public/3d
 ![The runner in the hero: at rest, turning as the page scrolls (side, back), and the sprint on a colour change](A8_character_makehuman_preview.jpg)
 
 1. **Character generation:** Built in Blender 5.2 using MPFB2 (MakeHuman Plugin for Blender):
-   - Body: a young, slim-athletic runner modelled on the product owner's reference clip (MPFB shape targets: shoulders wider than the hips over a long torso, a flat chest, slim waist and hips, a slender neck, lean toned limbs with defined calves, a soft oval face), `young_caucasian_male` skin (CC0)
+   - Body: a stylised young runner after the product owner's reference renders (MPFB shape targets: average, slim build with no visible muscle definition, a flat chest, slim hips, a slightly large young head), `young_caucasian_male` skin (CC0)
    - Hair: `short02` (CC0)
    - Eyes: `low-poly` (CC0)
-   - Clothes: `namuhekam_male_polo_shirt` (CC0), `mindfront_male_swimming_trunks_01` (CC-BY) as running shorts, `punkduck_running_shoes_01` (CC-BY); `build-character.mts` colours the shorts dark, makes the shirt texture light grey for tinting and marks the shoes' accents in their texture's alpha; the site then dresses him in each colourway (`dress()` in `src/three/heroCharacter.ts`)
+   - Clothes: `elvs_crude_t-shirt_male` (CC0) set loose, `elvs_male_swim_shorts1` (CC-BY) as knee-length shorts, `punkduck_running_shoes_01` (CC-BY), and white socks made from the lower legs' surface; `build-character.mts` colours the shorts dark, makes the shirt texture light grey for tinting and marks the shoes' accents in their texture's alpha; the site then dresses him in each colourway (`dress()` in `src/three/heroCharacter.ts`)
 2. **Animation retargeting:** Driven by Quaternius's Universal Animation Library (CC0):
    - `Idle_Loop` → `idle` (at rest), `Jog_Fwd_Loop` → `run` (blended in while the page scrolls), `Sprint_Loop` → `swing` (on a colour change)
    - Bone rotations calibrated to MPFB game engine rig in world space, hip movement scaled to character stride
 3. **Clothing:** the part of the shorts hidden under the shirt is cut away, so the waistband never shows through.
 4. **Compression & validation:** `pnpm assets:character` runs Meshopt and WebP compression:
-   - Output: `public/3d/character/character.glb` at **0.96 MB** (budget 2.0 MB): MakeHuman's shape sliders are baked into the mesh, not shipped as morph targets, detail maps at 256 px
+   - Output: `public/3d/character/character.glb` at **0.67 MB** (budget 2.0 MB), colour textures at 512 px: MakeHuman's shape sliders are baked into the mesh, not shipped as morph targets, detail maps at 256 px
    - glTF Validator: 0 errors
    - Licences and credits recorded in `licenses/character-makehuman.md`
 

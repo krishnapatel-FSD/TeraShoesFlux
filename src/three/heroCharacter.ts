@@ -133,7 +133,7 @@ export async function loadHeroCharacter(url: string): Promise<HeroCharacter> {
     const m = (o as THREE.Mesh).material as THREE.MeshStandardMaterial;
     if ((o as THREE.Mesh).isMesh && !materials.includes(m)) materials.push(m);
   });
-  const shirt = materials.find((m) => /polo/i.test(m.name));
+  const shirt = materials.find((m) => /t-shirt|polo/i.test(m.name));
   const shoes = materials.find((m) => /running_shoes/i.test(m.name));
   const knit = new THREE.Color();
   const accent = new THREE.Color();
