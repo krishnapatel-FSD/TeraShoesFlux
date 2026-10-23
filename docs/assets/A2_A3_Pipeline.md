@@ -15,7 +15,7 @@
 | A3 Recolour | ✅ Decided: texture recolours | One colour texture per colourway, plus the model's built-in "beach" variant for Coral | — (the shader is parked groundwork) |
 | A6 Lighting | ✅ Approved (22 Oct 2026): within 3% of a path-traced reference | `STUDIO_LIGHTS` in `src/three/shoeAssets.ts`; `pnpm assets:lighting` ([A6_Lighting_Check.md](A6_Lighting_Check.md)) | — |
 | A7 Props | ✅ Components | Tennis ball, racket, shuttlecock, paddle in `src/three/props/` (see `/dev/props`) | Designs checked against the latest prototype (OD-1), prop per colourway (OD-7) |
-| A8 Character | ✅ Done | Mixamo "Remy" + Idle + Baseball Strike → `public/3d/character/character.glb`, 1.25 MB (`pnpm assets:character`) | — |
+| A8 Character | ✅ Done | MakeHuman (MPFB2) + Quaternius UAL (idle & swing) → `public/3d/character/character.glb`, 1.84 MB (`pnpm assets:character`) | — |
 
 ## The model
 
@@ -70,14 +70,22 @@ pnpm assets:validate   # glTF Validator + budgets on everything in public/3d
 8. Convert the mask to `public/3d/flux01-zones.webp`, then point `ASSET_BASE` / `MODEL_URL` in `src/three/stage.ts` at the new files.
 9. **Done when (A2):** the validator reports 0 errors, the file is under 3 MB and under 40k triangles. **(A3):** all 8 colourways render correctly from that one model and mask.
 
-## A8: character procedure (needs your input)
+## A8: character procedure (MakeHuman + Quaternius)
 
-1. **Your input:** sign in at mixamo.com with a free Adobe account. I can't create accounts or sign in for you. Choose a humanoid character in sportswear, or upload one bought in (the brief says the player is bought in, so confirm which).
-2. Download the character **with skin** (FBX, T-pose), plus two animations **without skin**: a tennis idle ("Tennis Idle" or similar) and a forehand swing ("Tennis Forehand" or similar). Set 30 fps and turn in-place on. Put the files in `assets-src/character/`.
-3. In Blender (developer):
-   - import the character and both clips
-   - retarget the clips onto one armature as two NLA actions, `idle` and `swing`
-   - check that both loop cleanly (match the first and last frames)
-   - decimate the mesh, keep textures at 1024 px or less, limit to 4 bone influences
-4. Export `public/3d/character.glb` and run `pnpm assets:validate`. The `character` budget is under 2 MB.
-5. Mixamo's terms don't allow redistributing the raw files. The same licence question as A1 §2 applies to serving the GLB.
+![The player in the hero, and the swing (Blender preview, stand-in racket)](A8_character_makehuman_preview.jpg)
+
+1. **Character generation:** Built in Blender 5.2 using MPFB2 (MakeHuman Plugin for Blender):
+   - Body: adult athletic build, `young_caucasian_male` skin (CC0)
+   - Hair: `short02` (CC0)
+   - Eyes: `low-poly` (CC0)
+   - Clothes: `namuhekam_male_polo_shirt` (CC0), `elvs_male_trouser_short_1` (CC-BY), `punkduck_running_shoes_01` (CC-BY)
+2. **Animation retargeting:** Driven by Quaternius's Universal Animation Library (CC0):
+   - `Sword_Idle` → retargeted to `idle` (ready stance)
+   - `Sword_Attack` → retargeted to `swing` (forehand swing)
+   - Bone rotations calibrated to MPFB game engine rig in world space, hip movement scaled to character stride
+3. **Racket:** the site's own racket (`src/three/props/racketKit.ts`) is put in the right hand at runtime (`src/three/heroCharacter.ts`), placed from the finger joints in a forehand grip. Clothing: the shirt is tucked into the shorts so the waistband never shows through.
+4. **Compression & validation:** `pnpm assets:character` runs Meshopt and WebP compression:
+   - Output: `public/3d/character/character.glb` at **1.84 MB** (budget 2.0 MB)
+   - glTF Validator: 0 errors
+   - Licences and credits recorded in `licenses/character-makehuman.md`
+

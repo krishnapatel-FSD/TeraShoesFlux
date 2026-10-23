@@ -3,6 +3,7 @@ import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.j
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { type gsap, reduce } from "@/motion/gsap";
 import { mark } from "@/motion/probe";
+import { createRackets } from "@/three/props/racketKit";
 
 // B5: the tennis player in the hero, from `pnpm assets:character` (A8). It loads only when that
 // file exists (next.config.ts sets NEXT_PUBLIC_HERO_CHARACTER), so the site is unchanged without it.
@@ -21,6 +22,8 @@ export const HERO_CHARACTER_URL = process.env.NEXT_PUBLIC_HERO_CHARACTER ?? "";
  */
 const PLACE = { x: 0.9, feet: 0.86, height: 0.48, z: 0.3, turn: -0.55 };
 const MIN_HERO_WIDTH = 760;
+/** A full-size racket, in the character file's units (metres). */
+const RACKET_LENGTH = 0.685;
 /** Most the head turns toward the cursor (radians), and how fast it follows (per second). */
 const LOOK = { yaw: 0.6, pitch: 0.3, rate: 6 };
 
@@ -34,6 +37,8 @@ export interface HeroCharacter {
     place: {
       toWorld(px: number, py: number): [number, number];
       pxToWorld(px: number): number;
+      /** The camera's distance from the z = 0 plane, for anything placed behind or in front of it. */
+      camZ?: number;
     },
     popIn: number,
   ): void;
@@ -49,6 +54,29 @@ export async function loadHeroCharacter(url: string): Promise<HeroCharacter> {
     .setMeshoptDecoder(MeshoptDecoder)
     .loadAsync(url);
   const model = gltf.scene;
+
+  // Ensure solid rendering without transparency sorting artifacts
+  model.traverse((o) => {
+    if ((o as THREE.Mesh).isMesh) {
+      const mesh = o as THREE.Mesh;
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      const mats = Array.isArray(mesh.material)
+        ? mesh.material
+        : [mesh.material];
+      mats.forEach((m) => {
+        if (/hair|eyebrow|eyelash/i.test(m.name)) {
+          m.transparent = false;
+          m.alphaTest = 0.5;
+          m.depthWrite = true;
+        } else {
+          m.transparent = false;
+          m.depthWrite = true;
+        }
+      });
+    }
+  });
+
   const clip = (name: string) => {
     const c = gltf.animations.find((a) => a.name === name);
     if (!c) throw new Error(`Hero character has no "${name}" clip`);
@@ -85,7 +113,46 @@ export async function loadHeroCharacter(url: string): Promise<HeroCharacter> {
   root.rotation.y = PLACE.turn;
   mark("character-loaded");
 
-  // Mixamo's "mixamorig:Head" becomes "mixamorigHead" in three.js.
+  // The racket (A7's kit) in the right hand, held in a forehand grip: the handle runs diagonally
+  // across the palm from its heel to the index knuckle, the strings parallel to the palm. Placed from
+  // the finger joints, which sit at fixed positions in the hand bone's space (metres).
+  const racketKit = createRackets();
+  const bone = (name: string) => {
+    let found: THREE.Object3D | undefined;
+    model.traverse((o) => {
+      if ((o as THREE.Bone).isBone && o.name.toLowerCase() === name && !found)
+        found = o;
+    });
+    return found;
+  };
+  const hand = bone("hand_r");
+  const [middle, index, pinky] = [
+    "middle_01_r",
+    "index_01_r",
+    "pinky_01_r",
+  ].map(bone);
+  if (hand && middle && index && pinky) {
+    const fingers = middle.position.clone().normalize();
+    const across = index.position.clone().sub(pinky.position);
+    across.addScaledVector(fingers, -across.dot(fingers)).normalize();
+    const palm = across.clone().cross(fingers).normalize();
+    const up = across.clone().addScaledVector(fingers, 0.5).normalize();
+    const side = up.clone().cross(palm).normalize();
+    const scale = RACKET_LENGTH / 2;
+    const grip = fingers
+      .clone()
+      .multiplyScalar(middle.position.length() * 0.55)
+      .addScaledVector(palm, 0.022);
+    const racket = racketKit.create();
+    racket.matrix
+      .makeBasis(side, up, palm)
+      .setPosition(grip.addScaledVector(up, 0.75 * scale))
+      .scale(new THREE.Vector3(scale, scale, scale));
+    racket.matrix.decompose(racket.position, racket.quaternion, racket.scale);
+    hand.add(racket);
+  }
+
+  // Head tracking: "head" in MakeHuman or "mixamorigHead" in Mixamo.
   let head: THREE.Bone | undefined;
   model.traverse((o) => {
     if ((o as THREE.Bone).isBone && /head$/i.test(o.name) && !head)
@@ -135,6 +202,7 @@ export async function loadHeroCharacter(url: string): Promise<HeroCharacter> {
     },
     look: () => yaw,
     dispose() {
+      racketKit.dispose();
       mixer.stopAllAction();
       model.traverse((o) => {
         const mesh = o as THREE.Mesh;

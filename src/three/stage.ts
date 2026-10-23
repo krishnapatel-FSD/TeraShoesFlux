@@ -28,6 +28,7 @@ import {
   loadHeroCharacter,
   type HeroCharacter,
 } from "./heroCharacter";
+import { loadHeroAthlete } from "./heroAthlete";
 import { createTennisBalls } from "./props/tennisBallKit";
 import {
   dockPose,
@@ -68,7 +69,16 @@ const P: Pose[] = [
   // Tour (B4, GB-3): upper, foam, outsole, heel. Moving between chapters is the camera move (a dolly
   // in or out and an orbit); each then holds still while its text is shown. Shifted right to prevent text overlap.
   { a: "#a-story", f: 0.95, ox: 50, rx: 0.06, ry: -0.05, rz: 0, sh: 1, v: 1 },
-  { a: "#a-story", f: 0.96, ox: 70, rx: -0.12, ry: 0.35, rz: 0.04, sh: 1, v: 1 },
+  {
+    a: "#a-story",
+    f: 0.96,
+    ox: 70,
+    rx: -0.12,
+    ry: 0.35,
+    rz: 0.04,
+    sh: 1,
+    v: 1,
+  },
   { a: "#a-story", f: 0.85, ox: 50, rx: -1.3, ry: 0.2, rz: 0.2, sh: 0, v: 1 },
   { a: "#a-story", f: 0.85, ox: 50, rx: 0.25, ry: 2.5, rz: 0, sh: 1, v: 1 },
   // Product viewer
@@ -80,7 +90,7 @@ const P: Pose[] = [
 // Tennis balls: position as a fraction of the hero, diameter as a fraction of hero height, parallax depth
 const BALLS = [
   { x: 0.13, y: 0.26, s: 0.17, d: 1.0 },
-  { x: 0.87, y: 0.74, s: 0.17, d: 1.2 },
+  { x: 0.75, y: 0.65, s: 0.13, d: 0.8 },
   { x: 0.88, y: 0.2, s: 0.1, d: 0.6 },
   { x: 0.12, y: 0.76, s: 0.12, d: 0.8 },
   { x: 0.64, y: 0.9, s: 0.07, d: 0.5 },
@@ -193,16 +203,39 @@ export function createStage(
   const pxToWorld = (px: number) => (px / H) * 2 * halfH();
 
   /* ---- The hero's tennis player (B5), only when its file exists (A8) ---- */
+  // Loaded once the intro has played (unpacking it alongside the shoe slows the intro past B2's
+  // 2.5 s), and only while the hero is on screen, so it never holds up an animation elsewhere on the
+  // page (B6). It then pops in the way the balls did.
   let character: HeroCharacter | null = null;
-  if (HERO_CHARACTER_URL)
-    loadHeroCharacter(HERO_CHARACTER_URL).then(
+  let characterDue = false;
+  const appear = { v: 0 };
+  const loadCharacter = () => {
+    characterDue = false;
+    if (disposed) return;
+    // The 3D tennis player when its file is set, otherwise the athlete (the default).
+    (HERO_CHARACTER_URL
+      ? loadHeroCharacter(HERO_CHARACTER_URL)
+      : loadHeroAthlete()
+    ).then(
       (c) => {
         if (disposed) return c.dispose();
         character = c;
         stage.add(c.root);
+        if (HERO_CHARACTER_URL)
+          gsap.to(appear, {
+            v: 1,
+            duration: reduce ? 0 : 1.2,
+            ease: "elastic.out(1, .55)",
+          });
+        else {
+          // He replaces the plain image in place, so he appears at full size, in the same frame.
+          appear.v = 1;
+          document.documentElement.dataset.athlete = "3d";
+        }
       },
       (err: unknown) => console.warn("Hero character failed to load", err),
     );
+  };
 
   const manager = new THREE.LoadingManager();
   manager.onProgress = (_url, done, total) => {
@@ -249,6 +282,7 @@ export function createStage(
     const span = $("#loader span");
     if (span) span.textContent = "3D shoe could not load";
     S.balls = 1;
+    characterDue = true;
   };
   new GLTFLoader(manager)
     .setMeshoptDecoder(MeshoptDecoder)
@@ -329,6 +363,7 @@ export function createStage(
         duration: reduce ? 0 : 1.8,
         ease: "elastic.out(1, .55)",
         delay: reduce ? 0 : 0.5,
+        onComplete: () => void (characterDue = true),
       }),
     );
     for (const p of variants) if (p !== first) await loadVariant(p);
@@ -519,12 +554,15 @@ export function createStage(
     tilt.position.y += (1 - S.intro) * 1.2;
     root.visible = loaded && root.scale.x > 0.001;
     placeBalls(time, dt);
+    const heroRect = $("#hero")!.getBoundingClientRect();
+    if (characterDue && heroRect.bottom > 0 && heroRect.top < innerHeight)
+      loadCharacter();
     character?.update(
       dt,
       { x: mx, y: my },
-      $("#hero")!.getBoundingClientRect(),
-      { toWorld, pxToWorld },
-      S.balls,
+      heroRect,
+      { toWorld, pxToWorld, camZ: camera.position.z },
+      S.balls * appear.v,
     );
     if (probe()) {
       const c = root.getWorldPosition(probePoint).project(camera);
@@ -673,6 +711,7 @@ export function createStage(
       studio.dispose();
       tennisBalls.dispose();
       character?.dispose();
+      delete document.documentElement.dataset.athlete;
       shadow.geometry.dispose();
       shadowMat.dispose();
     },

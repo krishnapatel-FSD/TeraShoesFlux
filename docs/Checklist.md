@@ -46,7 +46,7 @@ Plan to finish: [plans/Plan_A_3D_Shoe.md](plans/Plan_A_3D_Shoe.md)
 | A5 | Brand basics: logo SVG, type scale, colour tokens, base components | ✅ | Logo as SVG (`public/brand/`, `pnpm brand:logo`) and a `<Logo/>` component; type scale and every colour as named tokens (`src/styles/design-tokens.css`); `pnpm theme:check` finds no colour literals outside the theme; base components (icons, accordion). Screenshots match pixel for pixel | — |
 | A6 | Lighting matched to a reference render | ✅ | **Approved by the product owner (22 Oct 2026), no change.** `pnpm assets:lighting` renders a path-traced Cycles reference under the site's exact light rig (studio HDR exported from the site, `STUDIO_LIGHTS`); every shot is within 3% of it in brightness ([A6_Lighting_Check.md](assets/A6_Lighting_Check.md)) | — |
 | A7 | Procedural props as R3F components | ✅ | `<TennisBall>`, `<Racket>`, `<Shuttlecock>`, `<Paddle>`: reusable R3F components with their own colour props, each 2 units long (`src/three/props/`, unit-tested). See them on the dev-only `/dev/props` page | Not on the page yet: the designs and which colourway gets which prop wait on the latest shared prototype (OD-1, OD-7) |
-| A8 | Rigged tennis character from Mixamo, <2 MB GLB | ✅ | Mixamo's "Remy" with "Idle" and "Baseball Strike", built by `pnpm assets:character` into `public/3d/character/character.glb`: **1.25 MB**, 35,196 triangles, glTF Validator 0 errors. Both clips loop cleanly (start and end poses within 1.1°). Materials made matte; licence note in `licenses/character-mixamo.md` | Product owner: confirm the Mixamo website use (same question as the shoe, A1 §2) |
+| A8 | Rigged tennis character, <2 MB GLB | ✅ | Replaced Mixamo on 23 Oct 2026 with free assets: a MakeHuman (MPFB2) athlete in a polo shirt, shorts and running shoes, with Quaternius' ready stance and swing retargeted onto it, built by `pnpm assets:character` into `public/3d/character/character.glb`: **1.84 MB**, 46,716 triangles, glTF Validator 0 errors. The site's racket sits in his right hand. Licences (CC0, two CC BY items credited) in `licenses/character-makehuman.md`. **Since 23 Oct the hero shows an AI-generated athlete instead** (`licenses/hero-athlete-ai.md`), in 3D: the photo displaced by a depth map from `pnpm assets:athlete`, running in place, turning toward the cursor and bursting forward on a colour change (`src/three/heroAthlete.ts`). The tennis player is off unless `NEXT_PUBLIC_HERO_CHARACTER` is set | — |
 | A9 | Script renders 4 product images per colourway and uploads them | 🟡 | `pnpm assets:images` renders side, front, top and sole for each colourway (2048 px, transparent PNG) with the site's lighting and materials; `--upload` sends them to the product media and sets variant images | Run `--upload` once the store and the Admin app (client ID and secret) are set up. The renders are final for this shoe (re-render only if A3 changes the materials) |
 
 ## Workstream B: Motion and animation
@@ -91,7 +91,7 @@ Decided 2026-10-20: INR, India only, stock by colour × size, guest checkout fir
 6. [ ] Payment gateway choice (later)
 7. [ ] Model licence decision and purchase (A1)
 8. [ ] Latest shared prototype link (A7, rackets and paddles)
-9. [ ] Mixamo sign-in (A8)
+9. [x] Hero character from free assets (A8): no sign-in needed
 10. [ ] Product owner: contrast fix (OD-8), 2 extra colourways (OD-3), 4th tour chapter (OD-4)
 11. [ ] Ask for the missing ~16 days of tasks (probably a workstream D: performance, accessibility, QA, launch)
 12. [ ] GitHub repository and Vercel account (Step 6)

@@ -6,11 +6,12 @@ import { spawn, spawnSync } from "node:child_process";
 import { copyFileSync, existsSync, mkdirSync, rmSync } from "node:fs";
 
 const PORT = 3100;
-// B5: the hero character, from its real file (A8) when it exists, otherwise the test dummy, copied
-// in for this build only.
+// B5: the hero's athlete, as the site shows it. `MOTION_CHARACTER=3d` tests the 3D tennis player
+// instead (A8): its real file when it exists, otherwise the test dummy, copied in for this build only.
+const player = process.env.MOTION_CHARACTER === "3d";
 const REAL = "public/3d/character/character.glb";
 const DUMMY = "public/3d/character/__test-dummy.glb";
-const useDummy = !existsSync(REAL);
+const useDummy = player && !existsSync(REAL);
 if (useDummy) {
   mkdirSync("public/3d/character", { recursive: true });
   copyFileSync("e2e/fixtures/character-dummy.glb", DUMMY);
@@ -18,7 +19,9 @@ if (useDummy) {
 const env = {
   ...process.env,
   NEXT_PUBLIC_MOTION_PROBE: "1",
-  NEXT_PUBLIC_HERO_CHARACTER: `/${(useDummy ? DUMMY : REAL).replace("public/", "")}`,
+  NEXT_PUBLIC_HERO_CHARACTER: player
+    ? `/${(useDummy ? DUMMY : REAL).replace("public/", "")}`
+    : "",
 };
 process.on("exit", () => {
   if (useDummy) rmSync(DUMMY, { force: true });

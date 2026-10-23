@@ -1,4 +1,3 @@
-import { existsSync } from "node:fs";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
@@ -9,13 +8,10 @@ const nextConfig: NextConfig = {
   // production builds unless `pnpm test:motion` builds with it set to "1".
   env: {
     NEXT_PUBLIC_MOTION_PROBE: process.env.NEXT_PUBLIC_MOTION_PROBE ?? "",
-    // B5: the hero character loads only when `pnpm assets:character` has made its file (A8).
-    // Restart the dev server after adding it. `pnpm test:motion` points this at the test dummy.
-    NEXT_PUBLIC_HERO_CHARACTER:
-      process.env.NEXT_PUBLIC_HERO_CHARACTER ??
-      (existsSync("public/3d/character/character.glb")
-        ? "/3d/character/character.glb"
-        : ""),
+    // The hero shows a still athlete (public/hero/athlete.webp). Set this to
+    // "/3d/character/character.glb" (`pnpm assets:character`, A8) for the animated 3D player (B5)
+    // instead, and restart the dev server. `pnpm test:motion` sets it to test the 3D player.
+    NEXT_PUBLIC_HERO_CHARACTER: process.env.NEXT_PUBLIC_HERO_CHARACTER ?? "",
   },
   turbopack: {
     rules: {

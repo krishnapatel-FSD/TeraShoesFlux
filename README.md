@@ -13,7 +13,7 @@ The production store for the Flux 01 knit trainer: a Next.js front end with one 
 | [UI_UX.md](docs/UI_UX.md) | Design tokens, contrast audit, typography, sections, components, motion timings, accessibility, responsive rules |
 | [Backend_Schema.md](docs/Backend_Schema.md) | Shopify product, variant, metafield and metaobject model, colourway token schema, customer data, API surface |
 | [assets/A1_Model_Selection.md](docs/assets/A1_Model_Selection.md) | How to pick and license the Flux 01 model, plus the licence finding about serving models to browsers |
-| [assets/A2_A3_Pipeline.md](docs/assets/A2_A3_Pipeline.md) | 3D pipeline status, the stand-in shoe, how the recolour shader works, Blender and Mixamo steps |
+| [assets/A2_A3_Pipeline.md](docs/assets/A2_A3_Pipeline.md) | 3D pipeline status, the stand-in shoe, how the recolour shader works, Blender and character (MakeHuman + Quaternius) steps |
 | [User_Flow.md](docs/User_Flow.md) | Mermaid diagrams of every journey: browse to checkout, colour change, filters, search, wishlist, bag sync, accounts, fallbacks |
 
 ## Run the app
@@ -47,7 +47,8 @@ Then open http://localhost:3000. Without `.env.local` the site runs on the proto
 | `pnpm assets:validate` | glTF Validator plus size and triangle budgets for `public/3d` |
 | `pnpm assets:hero` | With `pnpm dev` running: record the hero from the 3D scene and encode the no-WebGL fallback (WebM, MP4, stills, thumbnails) into `public/hero-fallback/`. Needs ffmpeg (B8) |
 | `pnpm assets:lighting` | With `pnpm dev` running: path-traced Blender reference vs the site's lighting, side by side, with numbers (A6). Needs Blender 5.2 |
-| `pnpm assets:character [--dummy]` | Mixamo download in `assets-src/character/` → `public/3d/character/character.glb` (clips idle and swing, under 2 MB, A8). `--dummy` rebuilds the test dummy. Needs Blender 5.2 |
+| `pnpm assets:athlete` | `assets-src/athlete/athlete-raw.png` (the Figma AI still) → `public/hero/athlete.webp` and its depth map, for the hero's 3D athlete |
+| `pnpm assets:character [--dummy]` | MakeHuman (MPFB2) + Quaternius UAL → `public/3d/character/character.glb` (clips idle and swing, under 2 MB, A8). `--dummy` rebuilds the test dummy. Needs Blender 5.2 |
 | `pnpm assets:images [--upload]` | With `pnpm dev` running: render 4 product photos per colourway into `assets-out/product-images/`, and optionally upload them to the Shopify product (A9) |
 | `pnpm codegen` | Regenerate Shopify GraphQL types after changing a query (no store needed) |
 | `pnpm shopify:setup` | Load Flux 01, its variants, stock and editable content into the Shopify store (see `scripts/shopify/store-config.mts`) |

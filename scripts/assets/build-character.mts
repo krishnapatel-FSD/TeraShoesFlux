@@ -1,14 +1,13 @@
-// A8: the hero character (B5) from a Mixamo download, in one command.
+// A8: the hero character (B5) built with MakeHuman (MPFB2) and Quaternius animations.
 //
-//   1. On mixamo.com (your Adobe sign-in): download the character "with skin" (FBX, T-pose), and a
-//      tennis idle and a forehand swing "without skin" (FBX, 30 fps, In Place).
-//   2. Save them as assets-src/character/character.fbx, idle.fbx and swing.fbx.
+//   1. MakeHuman asset packs installed in MPFB: system assets, Shirts 01, Pants 03, Shoes 02
+//   2. Quaternius Universal Animation Library in assets-src/quaternius/
 //   3. pnpm assets:character    → public/3d/character/character.glb (restart `pnpm dev` to show it)
 //
-// Blender (character_build.py) merges the two animations onto the character as clips "idle" and
-// "swing"; gltf-transform then compresses it (Meshopt geometry; WebP textures, colour at 1024 px and
-// detail maps at 512 px) and the
-// result is checked against A8's budget: under 2 MB, with both clips.
+// Blender (character_mpfb.py) generates the athletic character, attaches tennis clothes, retargets
+// the ready stance and swing animations from Quaternius, and creates the racket socket; gltf-transform
+// then compresses it (Meshopt geometry; WebP textures, colour at 1024 px and detail maps at 512 px)
+// and the result is checked against A8's budget: under 2 MB, with both clips.
 //   pnpm assets:character --dummy   builds the test dummy (character_dummy.py) into
 //                                   e2e/fixtures/character-dummy.glb instead
 import { NodeIO } from "@gltf-transform/core";
@@ -42,21 +41,21 @@ const work = join(tmpdir(), "terashoes-character");
 rmSync(work, { recursive: true, force: true });
 mkdirSync(work, { recursive: true });
 
-let input = resolve("assets-src/character");
+const raw = join(work, "raw.glb");
 if (dummy) {
   blender("scripts/assets/character_dummy.py", work);
-  input = work;
-}
-for (const f of ["character.fbx", "idle.fbx", "swing.fbx"])
-  if (!existsSync(join(input, f))) {
-    console.error(
-      `Missing ${join(input, f)}. See the steps at the top of this script.`,
-    );
+  blender("scripts/assets/character_build.py", work, raw);
+} else {
+  const ualGlb = resolve(
+    "assets-src/quaternius/Universal Animation Library[Standard]/Universal Animation Library[Standard]/Unreal-Godot/UAL1_Standard.glb",
+  );
+  if (!existsSync(ualGlb)) {
+    console.error(`Missing Quaternius animation library at ${ualGlb}`);
     process.exit(1);
   }
-
-const raw = join(work, "raw.glb");
-blender("scripts/assets/character_build.py", input, raw);
+  const previewDir = resolve("assets-out/character-preview");
+  blender("scripts/assets/character_mpfb.py", ualGlb, raw, previewDir);
+}
 
 const output = dummy
   ? resolve("e2e/fixtures/character-dummy.glb")
@@ -74,10 +73,23 @@ doc
   .listExtensionsUsed()
   .filter((e) => e.extensionName === "KHR_materials_specular")
   .forEach((e) => e.dispose());
-for (const m of doc.getRoot().listMaterials())
+for (const m of doc.getRoot().listMaterials()) {
   m.setMetallicRoughnessTexture(null)
     .setMetallicFactor(0)
     .setRoughnessFactor(0.75);
+  const name = m.getName().toLowerCase();
+  if (
+    name.includes("hair") ||
+    name.includes("eyebrow") ||
+    name.includes("eyelash")
+  ) {
+    m.setAlphaMode("MASK");
+    m.setAlphaCutoff(0.5);
+  } else {
+    m.setAlphaMode("OPAQUE");
+    m.setAlpha(1.0);
+  }
+}
 await doc.transform(
   dedup(),
   prune(),
@@ -88,14 +100,14 @@ await doc.transform(
     targetFormat: "webp",
     slots: /^baseColor/,
     resize: [1024, 1024],
-    quality: 85,
+    quality: 80,
   }),
   textureCompress({
     encoder: sharp,
     targetFormat: "webp",
     slots: /^(?!baseColor)/,
     resize: [512, 512],
-    quality: 82,
+    quality: 80,
   }),
   meshopt({ encoder: MeshoptEncoder, level: "medium" }),
 );

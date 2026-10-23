@@ -21,6 +21,7 @@
     "assets:model": "tsx scripts/assets/build-model.mts",
     "assets:validate": "tsx scripts/assets/validate-glb.mts",
     "assets:images": "tsx scripts/assets/render-product-images.mts",
+    "assets:athlete": "tsx scripts/assets/build-athlete.mts",
     "assets:character": "tsx scripts/assets/build-character.mts",
     "assets:lighting": "tsx scripts/assets/lighting-reference.mts",
     "assets:hero": "tsx scripts/assets/record-hero.mts",
