@@ -64,6 +64,28 @@ export function dockPose({ viewport: h, tour, buy, shop }: DockLayout): number {
 }
 
 /**
+ * A slow turn through each tour chapter's hold, so the shoe keeps answering the scroll while the
+ * chapter's pose holds and its text is read (otherwise the first chapter alone is half a screen of
+ * scrolling where nothing moves). Runs -0.5 → 0.5 across each hold, then eases back to -0.5 during
+ * the chapter move, where the much bigger move hides it. Continuous in the scroll position.
+ */
+export function tourDrift({
+  viewport: h,
+  tour,
+}: Pick<DockLayout, "viewport" | "tour">): number {
+  const t = clamp01(-tour.top / Math.max(1, tour.height - h));
+  // Alternating holds and moves: [0, move 1 start], [move 1], [move 1 end, move 2 start], …, [.., 1].
+  const edges = [0, ...TOUR_MOVES.flat(), 1];
+  for (let i = 0; i < edges.length - 1; i++) {
+    const [from, to] = [edges[i]!, edges[i + 1]!];
+    if (t > to && i < edges.length - 2) continue;
+    const k = clamp01((t - from) / Math.max(1e-6, to - from));
+    return i % 2 === 0 ? k - 0.5 : 0.5 - inOut(k);
+  }
+  return 0;
+}
+
+/**
  * How the shoe follows the pose: a critically damped spring (it eases in and out, never overshoots)
  * that takes about SMOOTH_TIME to arrive and never moves faster than MAX_SPEED poses a second. The
  * speed cap keeps a fast scroll between distant anchors from throwing the shoe across the screen.

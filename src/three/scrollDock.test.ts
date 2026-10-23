@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { dockPose, follow, MAX_SPEED, POSE, TOUR_CHAPTERS } from "./scrollDock";
+import {
+  dockPose,
+  follow,
+  MAX_SPEED,
+  POSE,
+  TOUR_CHAPTERS,
+  tourDrift,
+} from "./scrollDock";
 
 // A page like the site's at 900 px tall: hero, the 4.2-screen sticky tour (420vh), the buy
 // section, the shop.
@@ -103,5 +110,34 @@ describe("follow", () => {
 
   it("doesn't move without time passing", () => {
     expect(follow({ value: 2.5, velocity: 3 }, 4, 0)).toBe(2.5);
+  });
+});
+
+describe("tourDrift", () => {
+  const drift = (scroll: number) =>
+    tourDrift({
+      viewport: H,
+      tour: { top: PAGE.tour - scroll, height: PAGE.tourHeight },
+    });
+
+  it("never jumps: continuous across the whole tour", () => {
+    let last = drift(tourAt(0));
+    for (let k = 1; k <= 2000; k++) {
+      const d = drift(tourAt(k / 2000));
+      expect(Math.abs(d - last)).toBeLessThan(0.02);
+      expect(Math.abs(d)).toBeLessThanOrEqual(0.5);
+      last = d;
+    }
+  });
+
+  it("keeps changing while each chapter holds its pose", () => {
+    for (let c = 0; c < TOUR_CHAPTERS; c++) {
+      const held: number[] = [];
+      for (let k = 0; k < 200; k++) {
+        const scroll = tourAt((c + k / 200) / TOUR_CHAPTERS);
+        if (at(scroll) === POSE.tourFirst + c) held.push(drift(scroll));
+      }
+      expect(Math.max(...held) - Math.min(...held)).toBeGreaterThan(0.8);
+    }
   });
 });

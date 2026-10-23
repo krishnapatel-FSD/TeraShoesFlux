@@ -31,6 +31,7 @@ import {
 import { createTennisBalls } from "./props/tennisBallKit";
 import {
   dockPose,
+  tourDrift,
   follow,
   MAX_SCREEN_SPEED,
   MAX_SPEED,
@@ -501,8 +502,12 @@ export function createStage(
   /* Scroll docking (B1): one controller, see scrollDock.ts. Hero → tour chapters → product viewer →
      above the shop. Reduced motion follows the scroll exactly, as the prototype's scrub did. */
   const sections = { tour: $("#tour")!, buy: $("#buy")!, shop: $("#shop")! };
+  /** How far the shoe turns across a chapter's hold (radians). */
+  const TOUR_DRIFT = 0.45;
+  let lastTour = { top: 0, height: 1 };
   const dockTarget = () => {
     const tour = sections.tour.getBoundingClientRect();
+    lastTour = { top: tour.top, height: tour.height };
     return dockPose({
       viewport: H,
       tour: { top: tour.top, height: tour.height },
@@ -531,7 +536,13 @@ export function createStage(
     S.a = reduce
       ? target
       : follow(dock, target, dt, SMOOTH_TIME, poseSpeedCap(S.a, dt));
-    place(S.a, S.turn + S.drag);
+    // The slow turn through each chapter's hold (scrollDock.ts), only while docked in the tour.
+    const inTour =
+      Math.min(1, Math.max(0, S.a - POSE.hero)) *
+      Math.min(1, Math.max(0, POSE.viewer - S.a));
+    const drift =
+      tourDrift({ viewport: H, tour: lastTour }) * TOUR_DRIFT * inTour;
+    place(S.a, S.turn + S.drag + drift);
     if (!reduce) {
       const heroAmt = Math.max(0, 1 - S.a);
       tilt.rotation.y +=
