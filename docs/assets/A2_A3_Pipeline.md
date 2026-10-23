@@ -15,7 +15,7 @@
 | A3 Recolour | ✅ Decided: texture recolours | One colour texture per colourway, plus the model's built-in "beach" variant for Coral | — (the shader is parked groundwork) |
 | A6 Lighting | ✅ Approved (22 Oct 2026): within 3% of a path-traced reference | `STUDIO_LIGHTS` in `src/three/shoeAssets.ts`; `pnpm assets:lighting` ([A6_Lighting_Check.md](A6_Lighting_Check.md)) | — |
 | A7 Props | ✅ Components | Tennis ball, racket, shuttlecock, paddle in `src/three/props/` (see `/dev/props`) | Designs checked against the latest prototype (OD-1), prop per colourway (OD-7) |
-| A8 Character | ✅ Done | MakeHuman (MPFB2) + Quaternius UAL (idle, jog, sprint) → `public/3d/character/character.glb`, 1.47 MB (`pnpm assets:character`) | — |
+| A8 Character | ✅ Done | MakeHuman (MPFB2) + Quaternius UAL (idle, jog, sprint) → `public/3d/character/character.glb`, 0.96 MB (`pnpm assets:character`) | — |
 
 ## The model
 
@@ -75,7 +75,7 @@ pnpm assets:validate   # glTF Validator + budgets on everything in public/3d
 ![The runner in the hero: at rest, turning as the page scrolls (side, back), and the sprint on a colour change](A8_character_makehuman_preview.jpg)
 
 1. **Character generation:** Built in Blender 5.2 using MPFB2 (MakeHuman Plugin for Blender):
-   - Body: adult runner's build, `young_caucasian_male` skin (CC0)
+   - Body: adult athlete's build (MPFB shape targets: broad shoulders and back, narrow waist and hips, muscular arms and legs, a more mature face), `young_caucasian_male` skin (CC0)
    - Hair: `short02` (CC0)
    - Eyes: `low-poly` (CC0)
    - Clothes: `namuhekam_male_polo_shirt` (CC0), `mindfront_male_swimming_trunks_01` (CC-BY) as running shorts, `punkduck_running_shoes_01` (CC-BY); `build-character.mts` colours the shorts dark, makes the shirt texture light grey for tinting and marks the shoes' accents in their texture's alpha; the site then dresses him in each colourway (`dress()` in `src/three/heroCharacter.ts`)
@@ -84,7 +84,7 @@ pnpm assets:validate   # glTF Validator + budgets on everything in public/3d
    - Bone rotations calibrated to MPFB game engine rig in world space, hip movement scaled to character stride
 3. **Clothing:** the part of the shorts hidden under the shirt is cut away, so the waistband never shows through.
 4. **Compression & validation:** `pnpm assets:character` runs Meshopt and WebP compression:
-   - Output: `public/3d/character/character.glb` at **1.47 MB** (budget 2.0 MB), detail maps at 256 px
+   - Output: `public/3d/character/character.glb` at **0.96 MB** (budget 2.0 MB): MakeHuman's shape sliders are baked into the mesh, not shipped as morph targets, detail maps at 256 px
    - glTF Validator: 0 errors
    - Licences and credits recorded in `licenses/character-makehuman.md`
 

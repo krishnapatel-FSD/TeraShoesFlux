@@ -21,7 +21,29 @@ preview_dir = args[2] if len(args) > 2 else None
 
 # The look: a lean adult runner (the colours are set in build-character.mts). Asset names are matched
 # by file name in MPFB's data.
-BODY = {"gender": 1.0, "age": 0.5, "muscle": 0.85, "weight": 0.5, "height": 0.7, "proportions": 0.5}
+BODY = {"gender": 1.0, "age": 0.55, "muscle": 1.0, "weight": 0.55, "height": 0.8, "proportions": 1.0}
+# MakeHuman's macros alone leave a slight frame (narrow shoulders, soft chest, wide hips, a boyish
+# face): these shape targets give an athlete's build. Target names are MPFB's (data/targets).
+SHAPE = {
+    # A V-taper: broad shoulders and back, a defined chest, a narrow waist and hips.
+    "measure-shoulder-dist-incr": 0.8,
+    "torso-muscle-dorsi-incr": 0.8,
+    "torso-muscle-pectoral-incr": 0.7,
+    "measure-waist-circ-decr": 0.5,
+    "measure-hips-circ-decr": 0.7,
+    "neck-scale-horiz-incr": 0.4,
+    # Muscular arms and legs.
+    **{f"{s}-upperarm-muscle-incr": 0.7 for s in "lr"},
+    **{f"{s}-upperarm-shoulder-muscle-incr": 0.35 for s in "lr"},
+    **{f"{s}-lowerarm-muscle-incr": 0.5 for s in "lr"},
+    **{f"{s}-upperleg-muscle-incr": 0.6 for s in "lr"},
+    **{f"{s}-lowerleg-muscle-incr": 0.6 for s in "lr"},
+    # A more mature, defined face.
+    "head-age-incr": 0.35,
+    "head-square": 0.4,
+    "chin-width-incr": 0.4,
+    "chin-prominent-incr": 0.3,
+}
 SKIN = "young_caucasian_male"
 EYES = "low-poly"
 BODYPARTS = ["eyebrow001", "eyelashes01"]
@@ -55,6 +77,10 @@ def find(sub, pattern, ext):
 macro = TargetService.get_default_macro_info_dict()
 macro.update(BODY)
 human = HumanService.create_human(macro_detail_dict=macro)
+TargetService.bulk_load_targets(human, [{"target": t, "value": v} for t, v in SHAPE.items()])
+# Baked into the mesh: left as shape keys, every slider would ship as a morph target the browser
+# blends each frame (37 of them, a third of the file).
+TargetService.bake_targets(human)
 rig = HumanService.add_builtin_rig(human, "game_engine")
 HumanService.set_character_skin(find("skins", SKIN, ".mhmat"), human, skin_type="GAMEENGINE")
 HumanService.add_mhclo_asset(find("eyes", EYES, ".mhclo"), human, asset_type="Eyes", subdiv_levels=0, material_type="GAMEENGINE")
@@ -80,6 +106,11 @@ hidden = [v for v in mesh.verts if (shorts.matrix_world @ v.co).z > hem + 0.07]
 bmesh.ops.delete(mesh, geom=hidden, context="VERTS")
 mesh.to_mesh(shorts.data)
 mesh.free()
+# The athlete's shoulders and back push past the shirt as he moves: it sits a few millimetres out.
+push = shirt.modifiers.new("Over the muscles", "DISPLACE")
+push.strength, push.mid_level = 0.014, 0
+bpy.context.view_layer.objects.active = shirt
+bpy.ops.object.modifier_move_to_index(modifier=push.name, index=0)
 
 # Configure materials: opaque for skin, clothes, eyes; alpha clip only for hair/brows/lashes.
 for mat in bpy.data.materials:

@@ -31,6 +31,8 @@ export interface ProbeFrame {
   colourway: string;
   /** The hero character's head turn toward the cursor (radians), when there is one (B5) */
   look?: number;
+  /** The docking pose the shoe is easing toward (S.a's target), to measure how far it trails. */
+  target?: number;
 }
 
 export interface ProbeTimeline {

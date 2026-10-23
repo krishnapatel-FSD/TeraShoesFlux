@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { TOUR_STEP_NAMES } from "@/data/catalogue";
 import { gsap, ScrollTrigger } from "@/motion/gsap";
+import { getLenis } from "@/motion/SmoothScroll";
 
 // Four chapters (B4, GB-3). The outsole chapter is PLACEHOLDER copy until the product owner sends
 // the real specs (OD-4); only "2.5 mm lugs" is real (it moved here from the old Sole chapter).
@@ -35,7 +36,18 @@ const STEPS = [
 
 // Scroll-driven 3D tour: a sticky dark panel whose copy steps through the chapters while the shared
 // 3D stage docks the shoe into #a-story (see src/three/stage.ts). Each chapter's text shows for an
-// equal share of the scroll, and the shoe holds still through most of it (scrollDock.ts).
+// equal share of the scroll, and the shoe holds its pose through most of it (scrollDock.ts).
+// Clicking the shoe spins it and dragging turns it (stage.ts); the chapter dashes jump to a chapter.
+
+/** Scrolls to the middle of chapter i, where its pose holds and its text shows. */
+function goToChapter(tour: HTMLElement, i: number) {
+  const top = tour.getBoundingClientRect().top + scrollY;
+  const y =
+    top + ((i + 0.5) / STEPS.length) * (tour.offsetHeight - innerHeight);
+  const lenis = getLenis();
+  if (lenis) lenis.scrollTo(y, { duration: 1.2 });
+  else scrollTo({ top: y, behavior: "smooth" });
+}
 export function Tour() {
   const root = useRef<HTMLElement>(null);
   const label = useRef<HTMLSpanElement>(null);
@@ -129,13 +141,30 @@ export function Tour() {
                 </div>
               ))}
             </div>
-            <div className="anchor story-stage" id="a-story"></div>
+            <div
+              className="anchor story-stage"
+              id="a-story"
+              role="button"
+              tabIndex={0}
+              aria-label="Spin the shoe. You can also drag it to turn it."
+            >
+              <span className="tour-hint" aria-hidden="true">
+                Click to spin · Drag to turn
+              </span>
+            </div>
           </div>
-          <div className="dots-nav" aria-hidden="true">
-            {STEPS.map((_, i) => (
-              <i key={i}>
-                <b></b>
-              </i>
+          <div className="dots-nav">
+            {STEPS.map((s, i) => (
+              <button
+                type="button"
+                key={i}
+                aria-label={`Go to ${s.num}`}
+                onClick={() => root.current && goToChapter(root.current, i)}
+              >
+                <i>
+                  <b></b>
+                </i>
+              </button>
             ))}
             <span id="step-label" ref={label}>
               Upper

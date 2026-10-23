@@ -69,9 +69,10 @@
   --fs-hero: clamp(96px, 19vw, 320px); /* giant hero word */
   --fs-hero-phone: 23vw;
   --fs-menu: clamp(48px, 10vw, 120px); /* menu links */
-  /* Footer wordmark: spans the footer column exactly ("TERASHOES" is 7.995em wide). Product-owner
-     change, 21 Oct 2026: the prototype's clamp(44px, 12.4vw, 178px) clipped it below ~1650px. */
-  --fs-foot: calc(100cqi / 7.995);
+  /* Footer wordmark: spans the footer column exactly ("TERASHOES" in Anton is 4.089em wide).
+     Product-owner changes: 21 Oct 2026, sized to the column (the prototype's clamp(44px, 12.4vw,
+     178px) clipped it below ~1650px); 23 Oct 2026, set in Anton instead of Archivo. */
+  --fs-foot: calc(100cqi / 4.089);
   --fs-h2: clamp(40px, 5.6vw, 80px); /* section headings */
   --fs-pdp: clamp(40px, 4.6vw, 66px); /* product title */
   --fs-step: clamp(26px, 2.8vw, 42px); /* tour chapter title */

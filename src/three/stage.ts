@@ -476,28 +476,66 @@ export function createStage(
     });
   }
 
-  /* Drag to rotate in the product viewer. */
-  const viewer = $("#a-pdp")!;
+  /* Drag to rotate, in the product viewer and in the 3D tour. In the tour a click (a press that
+     barely moves) also plays a spin: a full turn with a slight zoom, back to the chapter's pose. */
   let dragging = false;
-  let lastX = 0;
-  listen(viewer, "pointerdown", (e) => {
-    dragging = true;
-    lastX = e.clientX;
-    viewer.setPointerCapture(e.pointerId);
-    S.dragV = 0;
-  });
-  listen(viewer, "pointermove", (e) => {
-    if (!dragging) return;
-    const dx = e.clientX - lastX;
-    lastX = e.clientX;
-    S.drag += dx * 0.012;
-    S.dragV = dx * 0.012;
-  });
-  const stop = () => {
-    dragging = false;
+  const tourSpin = { turn: 0, zoom: 0 };
+  let spinning: gsap.core.Timeline | null = null;
+  const spinTour = () => {
+    // Only while the shoe is docked in the tour, and never with reduced motion.
+    if (reduce || S.a < POSE.tourFirst - 0.2 || S.a > POSE.viewer - 0.8) return;
+    spinning?.kill();
+    tourSpin.turn = 0;
+    spinning = gsap
+      .timeline({ onComplete: () => void (tourSpin.turn = 0) })
+      .to(
+        tourSpin,
+        { turn: Math.PI * 2, duration: 1.6, ease: "power3.inOut" },
+        0,
+      )
+      .to(
+        tourSpin,
+        { zoom: 1, duration: 0.8, ease: "power2.inOut", yoyo: true, repeat: 1 },
+        0,
+      );
   };
-  listen(viewer, "pointerup", stop);
-  listen(viewer, "pointercancel", stop);
+  cleanups.push(() => spinning?.kill());
+  const draggable = (el: HTMLElement, onClick?: () => void) => {
+    let lastX = 0;
+    let moved = 0;
+    listen(el, "pointerdown", (e) => {
+      dragging = true;
+      lastX = e.clientX;
+      moved = 0;
+      el.setPointerCapture(e.pointerId);
+      S.dragV = 0;
+    });
+    listen(el, "pointermove", (e) => {
+      if (!dragging) return;
+      const dx = e.clientX - lastX;
+      lastX = e.clientX;
+      moved += Math.abs(dx);
+      S.drag += dx * 0.012;
+      S.dragV = dx * 0.012;
+    });
+    const stop = (e: PointerEvent) => {
+      if (!dragging) return;
+      dragging = false;
+      if (e.type === "pointerup" && moved < 6) onClick?.();
+    };
+    listen(el, "pointerup", stop);
+    listen(el, "pointercancel", stop);
+  };
+  draggable($("#a-pdp")!);
+  const tourStage = $("#a-story");
+  if (tourStage) {
+    draggable(tourStage, spinTour);
+    listen(tourStage, "keydown", (e) => {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      e.preventDefault();
+      spinTour();
+    });
+  }
 
   /* Scroll docking (B1): one controller, see scrollDock.ts. Hero → tour chapters → product viewer →
      above the shop. Reduced motion follows the scroll exactly, as the prototype's scrub did. */
@@ -505,6 +543,7 @@ export function createStage(
   /** How far the shoe turns across a chapter's hold (radians). */
   const TOUR_DRIFT = 0.45;
   let lastTour = { top: 0, height: 1 };
+  let lastTarget = 0;
   const dockTarget = () => {
     const tour = sections.tour.getBoundingClientRect();
     lastTour = { top: tour.top, height: tour.height };
@@ -528,9 +567,11 @@ export function createStage(
       S.drag += S.dragV;
       S.dragV *= 0.94;
     }
-    if (Math.abs(S.a - POSE.viewer) > 0.6) S.drag *= 0.94;
+    // Away from the product viewer, a drag eases back to the pose once let go.
+    if (!dragging && Math.abs(S.a - POSE.viewer) > 0.6) S.drag *= 0.95;
     rim.color.lerp(rimTarget, 0.05);
     const target = dockTarget();
+    lastTarget = target;
     // S.a may also be set directly (e.g. by the hero recorder), so follow from wherever it is.
     dock.value = S.a;
     S.a = reduce
@@ -542,7 +583,7 @@ export function createStage(
       Math.min(1, Math.max(0, POSE.viewer - S.a));
     const drift =
       tourDrift({ viewport: H, tour: lastTour }) * TOUR_DRIFT * inTour;
-    place(S.a, S.turn + S.drag + drift);
+    place(S.a, S.turn + S.drag + drift + tourSpin.turn);
     if (!reduce) {
       const heroAmt = Math.max(0, 1 - S.a);
       tilt.rotation.y +=
@@ -555,7 +596,9 @@ export function createStage(
       shadow.scale.setScalar(1 - Math.sin(time * 1.1) * 0.06);
     }
     vel *= 0.9;
-    root.scale.multiplyScalar((0.4 + 0.6 * S.intro) * (1 + S.pulse * 0.06));
+    root.scale.multiplyScalar(
+      (0.4 + 0.6 * S.intro) * (1 + S.pulse * 0.06) * (1 + tourSpin.zoom * 0.14),
+    );
     tilt.rotation.y += (1 - S.intro) * -3.2;
     tilt.position.y += (1 - S.intro) * 1.2;
     root.visible = loaded && root.scale.x > 0.001;
@@ -583,6 +626,7 @@ export function createStage(
         scroll: scrollY,
         colourway: shown ?? "",
         look: character?.look(),
+        target: lastTarget,
       });
     }
   }

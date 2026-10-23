@@ -1,5 +1,10 @@
 import type { Metadata } from "next";
-import { Archivo, Hanken_Grotesk, JetBrains_Mono } from "next/font/google";
+import {
+  Anton,
+  Archivo,
+  Hanken_Grotesk,
+  JetBrains_Mono,
+} from "next/font/google";
 import { SmoothScroll } from "@/motion/SmoothScroll";
 import "./globals.css";
 
@@ -8,6 +13,12 @@ const archivo = Archivo({
   variable: "--font-archivo",
   subsets: ["latin"],
   axes: ["wdth"],
+});
+// Anton: the footer's big word only.
+const anton = Anton({
+  variable: "--font-anton",
+  subsets: ["latin"],
+  weight: "400",
 });
 const hanken = Hanken_Grotesk({
   variable: "--font-hanken",
@@ -28,7 +39,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${archivo.variable} ${hanken.variable} ${jetbrains.variable}`}
+      className={`${archivo.variable} ${anton.variable} ${hanken.variable} ${jetbrains.variable}`}
     >
       <body>
         <SmoothScroll />
