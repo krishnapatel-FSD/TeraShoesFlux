@@ -3,29 +3,36 @@ import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.j
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { type gsap, reduce } from "@/motion/gsap";
 import { mark } from "@/motion/probe";
-import { createRackets } from "@/three/props/racketKit";
 
-// B5: the tennis player in the hero, from `pnpm assets:character` (A8). It loads only when that
-// file exists (next.config.ts sets NEXT_PUBLIC_HERO_CHARACTER), so the site is unchanged without it.
-//   - idle: loops while the hero is on screen
-//   - swing: once per colour change, on the colour-change timeline (B3)
-//   - head: turns toward the cursor, layered on top of the animation
-//   - reduced motion (B7): holds the idle's first pose, no swing, no head turn
-// Placement is provisional until the latest shared prototype (OD-1) shows where the player stands.
+// B5: the runner in the hero, from `pnpm assets:character` (A8). It loads only when that file exists
+// (next.config.ts sets NEXT_PUBLIC_HERO_CHARACTER), so the site is unchanged without it.
+//   - posture: he stands in a relaxed idle at rest and blends into a jog while the page scrolls,
+//     faster the faster it scrolls
+//   - scroll: he turns through 180° as the hero scrolls away, front three-quarter to back
+//   - cursor: his body turns a little toward it and his head follows it
+//   - colour change: a short sprint, on the colour-change timeline (B3)
+//   - reduced motion (B7): holds the idle's first pose, facing the viewer; none of the above
 
 export const HERO_CHARACTER_URL = process.env.NEXT_PUBLIC_HERO_CHARACTER ?? "";
 
 /**
- * Where the player stands, as fractions of the hero: feet at (x, feet), `height` tall, `z` in front
- * of the tennis balls. Clear of the price and "Shop now". Hidden below the site's phone breakpoint
- * (760 px), where the hero has no room for him; both provisional until the latest prototype (OD-1).
+ * Where he stands, as fractions of the hero: feet at (x, feet), `height` tall, `z` in front of the
+ * tennis balls, turned `turn` toward the shoe. Clear of the price and "Shop now". Hidden below the
+ * site's phone breakpoint (760 px), where the hero has no room for him.
  */
-const PLACE = { x: 0.9, feet: 0.86, height: 0.48, z: 0.3, turn: -0.55 };
+const PLACE = { x: 0.87, feet: 0.87, height: 0.56, z: 0.3, turn: -0.6 };
 const MIN_HERO_WIDTH = 760;
-/** A full-size racket, in the character file's units (metres). */
-const RACKET_LENGTH = 0.685;
-/** Most the head turns toward the cursor (radians), and how fast it follows (per second). */
+/**
+ * Scroll, as a fraction of the hero's height scrolled: he turns 180° over the first `turn`, then
+ * shrinks away between `leave` and `gone`, before he would reach the header. `rate`: how fast he
+ * follows (per second).
+ */
+const SCROLL = { turn: 0.3, leave: 0.24, gone: 0.42, rate: 6 };
+/** Most his body and head turn toward the cursor (radians), and how fast they follow (per second). */
+const BODY = { yaw: 0.3, rate: 4 };
 const LOOK = { yaw: 0.6, pitch: 0.3, rate: 6 };
+/** Scroll speed (Lenis velocity) for a full jog, and how fast he eases into and out of it. */
+const JOG = { speed: 14, rateIn: 4, rateOut: 1.5 };
 
 export interface HeroCharacter {
   root: THREE.Object3D;
@@ -37,8 +44,8 @@ export interface HeroCharacter {
     place: {
       toWorld(px: number, py: number): [number, number];
       pxToWorld(px: number): number;
-      /** The camera's distance from the z = 0 plane, for anything placed behind or in front of it. */
-      camZ?: number;
+      /** The page's scroll velocity (Lenis), for the jog. */
+      scroll?: number;
     },
     popIn: number,
   ): void;
@@ -55,26 +62,16 @@ export async function loadHeroCharacter(url: string): Promise<HeroCharacter> {
     .loadAsync(url);
   const model = gltf.scene;
 
-  // Ensure solid rendering without transparency sorting artifacts
+  // Solid rendering: no transparency sorting, cut-out hair, brows and lashes.
   model.traverse((o) => {
-    if ((o as THREE.Mesh).isMesh) {
-      const mesh = o as THREE.Mesh;
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
-      const mats = Array.isArray(mesh.material)
-        ? mesh.material
-        : [mesh.material];
-      mats.forEach((m) => {
-        if (/hair|eyebrow|eyelash/i.test(m.name)) {
-          m.transparent = false;
-          m.alphaTest = 0.5;
-          m.depthWrite = true;
-        } else {
-          m.transparent = false;
-          m.depthWrite = true;
-        }
-      });
-    }
+    const mesh = o as THREE.Mesh;
+    if (!mesh.isMesh) return;
+    const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+    mats.forEach((m) => {
+      m.transparent = false;
+      m.depthWrite = true;
+      if (/hair|eyebrow|eyelash/i.test(m.name)) m.alphaTest = 0.5;
+    });
   });
 
   const clip = (name: string) => {
@@ -82,21 +79,28 @@ export async function loadHeroCharacter(url: string): Promise<HeroCharacter> {
     if (!c) throw new Error(`Hero character has no "${name}" clip`);
     return c;
   };
-
   const mixer = new THREE.AnimationMixer(model);
   const idle = mixer.clipAction(clip("idle")).play();
+  // The jog runs underneath the idle at no weight until the page scrolls (older files have none).
+  const runClip = gltf.animations.find((a) => a.name === "run");
+  const run = runClip
+    ? mixer.clipAction(runClip).setEffectiveWeight(0).play()
+    : null;
   const swingAction = mixer.clipAction(clip("swing"));
-  swingAction.setLoop(THREE.LoopOnce, 1);
+  // A sprint clip is a single stride: two of them make the burst.
+  swingAction.setLoop(THREE.LoopRepeat, 2);
+  swingAction.clampWhenFinished = true;
+  let swinging = false;
   mixer.addEventListener("finished", (e) => {
     if (e.action !== swingAction) return;
-    idle.reset().fadeIn(0.2).play();
-    swingAction.fadeOut(0.2);
+    swinging = false;
+    swingAction.fadeOut(0.25);
     mark("character-swing-end");
   });
   mixer.update(0);
 
-  // Normalise: 1 unit tall, feet at the origin. Measured on the posed, skinned vertices: Mixamo
-  // files are in centimetres under a scaled rig, so the raw mesh bounds are no guide.
+  // Normalise: 1 unit tall, feet at the origin. Measured on the posed, skinned vertices, so the
+  // file's units and rig scale don't matter.
   model.updateMatrixWorld(true);
   model.traverse((o) => (o as THREE.SkinnedMesh).skeleton?.update());
   const box = new THREE.Box3().setFromObject(model, true);
@@ -113,46 +117,7 @@ export async function loadHeroCharacter(url: string): Promise<HeroCharacter> {
   root.rotation.y = PLACE.turn;
   mark("character-loaded");
 
-  // The racket (A7's kit) in the right hand, held in a forehand grip: the handle runs diagonally
-  // across the palm from its heel to the index knuckle, the strings parallel to the palm. Placed from
-  // the finger joints, which sit at fixed positions in the hand bone's space (metres).
-  const racketKit = createRackets();
-  const bone = (name: string) => {
-    let found: THREE.Object3D | undefined;
-    model.traverse((o) => {
-      if ((o as THREE.Bone).isBone && o.name.toLowerCase() === name && !found)
-        found = o;
-    });
-    return found;
-  };
-  const hand = bone("hand_r");
-  const [middle, index, pinky] = [
-    "middle_01_r",
-    "index_01_r",
-    "pinky_01_r",
-  ].map(bone);
-  if (hand && middle && index && pinky) {
-    const fingers = middle.position.clone().normalize();
-    const across = index.position.clone().sub(pinky.position);
-    across.addScaledVector(fingers, -across.dot(fingers)).normalize();
-    const palm = across.clone().cross(fingers).normalize();
-    const up = across.clone().addScaledVector(fingers, 0.5).normalize();
-    const side = up.clone().cross(palm).normalize();
-    const scale = RACKET_LENGTH / 2;
-    const grip = fingers
-      .clone()
-      .multiplyScalar(middle.position.length() * 0.55)
-      .addScaledVector(palm, 0.022);
-    const racket = racketKit.create();
-    racket.matrix
-      .makeBasis(side, up, palm)
-      .setPosition(grip.addScaledVector(up, 0.75 * scale))
-      .scale(new THREE.Vector3(scale, scale, scale));
-    racket.matrix.decompose(racket.position, racket.quaternion, racket.scale);
-    hand.add(racket);
-  }
-
-  // Head tracking: "head" in MakeHuman or "mixamorigHead" in Mixamo.
+  // Head tracking: "head" in MakeHuman's rig, "mixamorigHead" in Mixamo's.
   let head: THREE.Bone | undefined;
   model.traverse((o) => {
     if ((o as THREE.Bone).isBone && /head$/i.test(o.name) && !head)
@@ -163,15 +128,28 @@ export async function loadHeroCharacter(url: string): Promise<HeroCharacter> {
   const headRest = head?.quaternion.clone();
   let yaw = 0;
   let pitch = 0;
+  let bodyYaw = 0;
+  let turn = PLACE.turn;
+  let jog = 0;
   const look = new THREE.Quaternion();
   const euler = new THREE.Euler();
+  const ease = (rate: number, dt: number) => 1 - Math.exp(-rate * dt);
 
   return {
     root,
     update(dt, pointer, hero, place, popIn) {
-      root.visible = hero.bottom > 0 && hero.width >= MIN_HERO_WIDTH;
+      const scrolledPx = Math.max(0, -hero.top) / hero.height;
+      const leaving = Math.min(
+        1,
+        Math.max(0, (scrolledPx - SCROLL.leave) / (SCROLL.gone - SCROLL.leave)),
+      );
+      root.visible =
+        hero.bottom > 0 && hero.width >= MIN_HERO_WIDTH && leaving < 0.97;
       if (!root.visible) return;
-      const height = place.pxToWorld(hero.height * PLACE.height) * popIn;
+      const height =
+        place.pxToWorld(hero.height * PLACE.height) *
+        popIn *
+        (1 - leaving * leaving * (3 - 2 * leaving));
       const [wx, wy] = place.toWorld(
         hero.left + hero.width * PLACE.x,
         hero.top + hero.height * PLACE.feet,
@@ -179,21 +157,44 @@ export async function loadHeroCharacter(url: string): Promise<HeroCharacter> {
       root.position.set(wx, wy, PLACE.z);
       root.scale.setScalar(Math.max(0.0001, height));
       if (reduce) return;
+
+      // Posture: idle at rest, a jog while scrolling, the sprint over both while it plays.
+      const target = Math.min(1, Math.abs(place.scroll ?? 0) / JOG.speed);
+      jog += (target - jog) * ease(target > jog ? JOG.rateIn : JOG.rateOut, dt);
+      const free = swinging ? 1 - swingAction.getEffectiveWeight() : 1;
+      if (run) {
+        run.setEffectiveWeight(jog * free);
+        run.timeScale = 0.7 + jog * 0.5;
+      }
+      idle.setEffectiveWeight((1 - (run ? jog : 0)) * free);
+
+      // The turn: 180° as the hero scrolls away, plus a little toward the cursor.
+      const scrolled = Math.min(1, scrolledPx / SCROLL.turn);
+      bodyYaw += (pointer.x * 2 * BODY.yaw - bodyYaw) * ease(BODY.rate, dt);
+      turn +=
+        (PLACE.turn + scrolled * Math.PI + bodyYaw - turn) *
+        ease(SCROLL.rate, dt);
+      root.rotation.y = turn;
+
       if (head && headRest) head.quaternion.copy(headRest);
       mixer.update(dt);
       if (head) {
-        const follow = 1 - Math.exp(-LOOK.rate * dt);
+        const follow = ease(LOOK.rate, dt);
         yaw += (pointer.x * 2 * LOOK.yaw - yaw) * follow;
         pitch += (pointer.y * 2 * LOOK.pitch - pitch) * follow;
-        head.quaternion.multiply(look.setFromEuler(euler.set(pitch, yaw, 0)));
+        // Facing away, he no longer looks round at the cursor.
+        const facing = Math.max(0, Math.cos(scrolled * Math.PI));
+        head.quaternion.multiply(
+          look.setFromEuler(euler.set(pitch * facing, yaw * facing, 0)),
+        );
       }
     },
     swing(timeline) {
       if (reduce) return;
       timeline.call(
         () => {
-          idle.fadeOut(0.15);
-          swingAction.reset().fadeIn(0.15).play();
+          swinging = true;
+          swingAction.reset().fadeIn(0.2).play();
           mark("character-swing-start");
         },
         undefined,
@@ -202,7 +203,6 @@ export async function loadHeroCharacter(url: string): Promise<HeroCharacter> {
     },
     look: () => yaw,
     dispose() {
-      racketKit.dispose();
       mixer.stopAllAction();
       model.traverse((o) => {
         const mesh = o as THREE.Mesh;

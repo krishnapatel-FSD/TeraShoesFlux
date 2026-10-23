@@ -112,13 +112,6 @@ footer { position: relative; z-index: 5; }
 .word { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; user-select: none; }
 .word span { font-family: var(--display); font-weight: 900; font-stretch: 62%; font-variation-settings: "wdth" 62; text-transform: uppercase; font-size: var(--fs-hero); line-height: .82; letter-spacing: .005em; white-space: nowrap; color: var(--hero-ink); display: inline-flex; text-shadow: 0 10px 40px color-mix(in srgb, var(--hl) 60%, var(--black) 20%); }
 .word.outline { z-index: 5; }
-/* The athlete stands right of the shoe, in front of the solid word and behind the 3D shoe and balls. */
-.hero-athlete { position: absolute; right: 3%; bottom: 14%; height: 62%; z-index: 3; pointer-events: none; }
-.hero-athlete img { display: block; height: 100%; width: auto; filter: drop-shadow(0 24px 30px color-mix(in srgb, var(--hl) 50%, var(--black) 35%)); }
-/* Once the 3D athlete (src/three/heroAthlete.ts) has loaded, he takes the plain image's place. */
-html[data-athlete="3d"] .hero-athlete { visibility: hidden; }
-/* On portrait tablets the shoe spans the whole width and would cross him: shown from landscape widths. */
-@media (max-width: 1023px) and (orientation: portrait) { .hero-athlete { display: none; } }
 /* B8: the recorded hero (no WebGL) in the 3D canvas's place, between the two headline copies */
 .hero-fallback { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 4; pointer-events: none; }
 .hero-bg > .hero-fallback { z-index: auto; }
@@ -150,7 +143,6 @@ html[data-athlete="3d"] .hero-athlete { visibility: hidden; }
 @keyframes up { 0% { transform: none; } 45% { transform: translateY(-160%); } 46% { transform: translateY(160%); } 100% { transform: none; } }
 @media (max-width: 760px) {
   .word span { font-size: var(--fs-hero-phone); }
-  .hero-athlete { display: none; }
   .hero-stage { width: 112vw; top: 43%; }
   .hero-foot .left { max-width: none; }
 }

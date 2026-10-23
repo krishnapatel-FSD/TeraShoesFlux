@@ -28,7 +28,6 @@ import {
   loadHeroCharacter,
   type HeroCharacter,
 } from "./heroCharacter";
-import { loadHeroAthlete } from "./heroAthlete";
 import { createTennisBalls } from "./props/tennisBallKit";
 import {
   dockPose,
@@ -202,7 +201,7 @@ export function createStage(
   };
   const pxToWorld = (px: number) => (px / H) * 2 * halfH();
 
-  /* ---- The hero's tennis player (B5), only when its file exists (A8) ---- */
+  /* ---- The hero's runner (B5), only when its file exists (A8) ---- */
   // Loaded once the intro has played (unpacking it alongside the shoe slows the intro past B2's
   // 2.5 s), and only while the hero is on screen, so it never holds up an animation elsewhere on the
   // page (B6). It then pops in the way the balls did.
@@ -211,27 +210,17 @@ export function createStage(
   const appear = { v: 0 };
   const loadCharacter = () => {
     characterDue = false;
-    if (disposed) return;
-    // The 3D tennis player when its file is set, otherwise the athlete (the default).
-    (HERO_CHARACTER_URL
-      ? loadHeroCharacter(HERO_CHARACTER_URL)
-      : loadHeroAthlete()
-    ).then(
+    if (!HERO_CHARACTER_URL || disposed) return;
+    loadHeroCharacter(HERO_CHARACTER_URL).then(
       (c) => {
         if (disposed) return c.dispose();
         character = c;
         stage.add(c.root);
-        if (HERO_CHARACTER_URL)
-          gsap.to(appear, {
-            v: 1,
-            duration: reduce ? 0 : 1.2,
-            ease: "elastic.out(1, .55)",
-          });
-        else {
-          // He replaces the plain image in place, so he appears at full size, in the same frame.
-          appear.v = 1;
-          document.documentElement.dataset.athlete = "3d";
-        }
+        gsap.to(appear, {
+          v: 1,
+          duration: reduce ? 0 : 1.2,
+          ease: "elastic.out(1, .55)",
+        });
       },
       (err: unknown) => console.warn("Hero character failed to load", err),
     );
@@ -561,7 +550,7 @@ export function createStage(
       dt,
       { x: mx, y: my },
       heroRect,
-      { toWorld, pxToWorld, camZ: camera.position.z },
+      { toWorld, pxToWorld, scroll: vel },
       S.balls * appear.v,
     );
     if (probe()) {
@@ -711,7 +700,6 @@ export function createStage(
       studio.dispose();
       tennisBalls.dispose();
       character?.dispose();
-      delete document.documentElement.dataset.athlete;
       shadow.geometry.dispose();
       shadowMat.dispose();
     },

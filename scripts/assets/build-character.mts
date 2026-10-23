@@ -4,10 +4,10 @@
 //   2. Quaternius Universal Animation Library in assets-src/quaternius/
 //   3. pnpm assets:character    → public/3d/character/character.glb (restart `pnpm dev` to show it)
 //
-// Blender (character_mpfb.py) generates the athletic character, attaches tennis clothes, retargets
-// the ready stance and swing animations from Quaternius, and creates the racket socket; gltf-transform
-// then compresses it (Meshopt geometry; WebP textures, colour at 1024 px and detail maps at 512 px)
-// and the result is checked against A8's budget: under 2 MB, with both clips.
+// Blender (character_mpfb.py) generates the runner, dresses him, and retargets the idle, jog and sprint
+// clips from Quaternius; gltf-transform then colours his kit, compresses it (Meshopt geometry; WebP
+// textures, colour at 1024 px and detail maps at 256 px) and the result is checked against A8's
+// budget: under 2 MB, with the idle and swing clips.
 //   pnpm assets:character --dummy   builds the test dummy (character_dummy.py) into
 //                                   e2e/fixtures/character-dummy.glb instead
 import { NodeIO } from "@gltf-transform/core";
@@ -24,6 +24,8 @@ import { existsSync, mkdirSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import sharp from "sharp";
+import { Color } from "three";
+import { SCENE } from "../../src/styles/theme.ts";
 import { BUDGETS } from "./budgets.mts";
 
 const dummy = process.argv.includes("--dummy");
@@ -65,9 +67,8 @@ const io = new NodeIO()
   .registerExtensions(ALL_EXTENSIONS)
   .registerDependencies({ "meshopt.encoder": MeshoptEncoder });
 const doc = await io.read(raw);
-// Mixamo's materials use gloss maps (bright = shiny), which arrive in glTF's roughness slot
-// (bright = rough), plus a specular map: the clothes come out like shiny plastic. A small figure in
-// the hero needs neither, so every material becomes plainly matte.
+// Gloss and specular maps make clothes look like shiny plastic on a figure this small: every material
+// becomes plainly matte.
 doc
   .getRoot()
   .listExtensionsUsed()
@@ -90,11 +91,35 @@ for (const m of doc.getRoot().listMaterials()) {
     m.setAlpha(1.0);
   }
 }
+// The runner's kit, in the colours of the campaign athlete: the shirt and shorts textures turned to
+// greys (keeping their folds and weave) and tinted, and the shoes' yellow accents turned emerald.
+const KIT: { match: string; tint?: string; hue?: number }[] = [
+  { match: "polo", tint: SCENE.athlete.shirt },
+  { match: "trunks", tint: SCENE.athlete.shorts },
+  { match: "running_shoes", hue: 60 },
+];
+for (const m of doc.getRoot().listMaterials()) {
+  const kit = KIT.find((k) => m.getName().toLowerCase().includes(k.match));
+  const tex = kit && m.getBaseColorTexture();
+  if (!kit || !tex) continue;
+  const image = sharp(tex.getImage()!);
+  tex
+    .setImage(
+      kit.tint
+        ? await image.grayscale().normalise().png().toBuffer()
+        : await image.modulate({ hue: kit.hue }).png().toBuffer(),
+    )
+    .setMimeType("image/png");
+  if (kit.tint) {
+    const c = new Color(kit.tint);
+    m.setBaseColorFactor([c.r, c.g, c.b, 1]);
+  }
+}
 await doc.transform(
   dedup(),
   prune(),
   // The character is at most about half the hero's height on screen: colour textures keep 1024 px,
-  // the detail maps (normal, specular, gloss) drop to 512 px, where their difference can't be seen.
+  // the detail maps (normal, specular, gloss) drop to 256 px, where their difference can't be seen.
   textureCompress({
     encoder: sharp,
     targetFormat: "webp",
@@ -106,7 +131,7 @@ await doc.transform(
     encoder: sharp,
     targetFormat: "webp",
     slots: /^(?!baseColor)/,
-    resize: [512, 512],
+    resize: [256, 256],
     quality: 80,
   }),
   meshopt({ encoder: MeshoptEncoder, level: "medium" }),

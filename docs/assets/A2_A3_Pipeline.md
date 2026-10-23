@@ -15,7 +15,7 @@
 | A3 Recolour | ✅ Decided: texture recolours | One colour texture per colourway, plus the model's built-in "beach" variant for Coral | — (the shader is parked groundwork) |
 | A6 Lighting | ✅ Approved (22 Oct 2026): within 3% of a path-traced reference | `STUDIO_LIGHTS` in `src/three/shoeAssets.ts`; `pnpm assets:lighting` ([A6_Lighting_Check.md](A6_Lighting_Check.md)) | — |
 | A7 Props | ✅ Components | Tennis ball, racket, shuttlecock, paddle in `src/three/props/` (see `/dev/props`) | Designs checked against the latest prototype (OD-1), prop per colourway (OD-7) |
-| A8 Character | ✅ Done | MakeHuman (MPFB2) + Quaternius UAL (idle & swing) → `public/3d/character/character.glb`, 1.84 MB (`pnpm assets:character`) | — |
+| A8 Character | ✅ Done | MakeHuman (MPFB2) + Quaternius UAL (idle, jog, sprint) → `public/3d/character/character.glb`, 1.76 MB (`pnpm assets:character`) | — |
 
 ## The model
 
@@ -72,20 +72,19 @@ pnpm assets:validate   # glTF Validator + budgets on everything in public/3d
 
 ## A8: character procedure (MakeHuman + Quaternius)
 
-![The player in the hero, and the swing (Blender preview, stand-in racket)](A8_character_makehuman_preview.jpg)
+![The runner in the hero: at rest, turning as the page scrolls (side, back), and the sprint on a colour change](A8_character_makehuman_preview.jpg)
 
 1. **Character generation:** Built in Blender 5.2 using MPFB2 (MakeHuman Plugin for Blender):
-   - Body: adult athletic build, `young_caucasian_male` skin (CC0)
+   - Body: adult runner's build, `young_caucasian_male` skin (CC0)
    - Hair: `short02` (CC0)
    - Eyes: `low-poly` (CC0)
-   - Clothes: `namuhekam_male_polo_shirt` (CC0), `elvs_male_trouser_short_1` (CC-BY), `punkduck_running_shoes_01` (CC-BY)
+   - Clothes: `namuhekam_male_polo_shirt` (CC0), `mindfront_male_swimming_trunks_01` (CC-BY) as running shorts, `punkduck_running_shoes_01` (CC-BY); `build-character.mts` colours them (emerald shirt, dark shorts, emerald shoe accents, from `SCENE.athlete`)
 2. **Animation retargeting:** Driven by Quaternius's Universal Animation Library (CC0):
-   - `Sword_Idle` → retargeted to `idle` (ready stance)
-   - `Sword_Attack` → retargeted to `swing` (forehand swing)
+   - `Idle_Loop` → `idle` (at rest), `Jog_Fwd_Loop` → `run` (blended in while the page scrolls), `Sprint_Loop` → `swing` (on a colour change)
    - Bone rotations calibrated to MPFB game engine rig in world space, hip movement scaled to character stride
-3. **Racket:** the site's own racket (`src/three/props/racketKit.ts`) is put in the right hand at runtime (`src/three/heroCharacter.ts`), placed from the finger joints in a forehand grip. Clothing: the shirt is tucked into the shorts so the waistband never shows through.
+3. **Clothing:** the part of the shorts hidden under the shirt is cut away, so the waistband never shows through.
 4. **Compression & validation:** `pnpm assets:character` runs Meshopt and WebP compression:
-   - Output: `public/3d/character/character.glb` at **1.84 MB** (budget 2.0 MB)
+   - Output: `public/3d/character/character.glb` at **1.76 MB** (budget 2.0 MB), detail maps at 256 px
    - glTF Validator: 0 errors
    - Licences and credits recorded in `licenses/character-makehuman.md`
 

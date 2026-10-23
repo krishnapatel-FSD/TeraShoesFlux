@@ -22,4 +22,6 @@ export const SCENE = {
   racket: { frame: "#101216", strings: "#f4f6ee", grip: "#ffffff" },
   shuttlecock: { cork: "#ffffff", feathers: "#f4f6ee", band: "#101216" },
   paddle: { rubber: "#101216", back: "#ffffff", handle: "#f4f6ee" },
+  /** The hero athlete's kit (A8): an emerald running shirt and near-black shorts. */
+  athlete: { shirt: "#22a463", shorts: "#2a2e36" },
 } as const;

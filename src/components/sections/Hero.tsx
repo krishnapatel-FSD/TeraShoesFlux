@@ -64,21 +64,6 @@ export function Hero() {
           </span>
         </div>
       </div>
-      {/* The athlete as a plain image, until the 3D scene's athlete (src/three/heroAthlete.ts)
-          replaces it, or for good without WebGL. Not shown with the 3D tennis player
-          (NEXT_PUBLIC_HERO_CHARACTER, next.config.ts). */}
-      {!process.env.NEXT_PUBLIC_HERO_CHARACTER && (
-        <div className="hero-athlete" data-intro>
-          {/* eslint-disable-next-line @next/next/no-img-element -- a fixed, pre-sized WebP cut-out */}
-          <img
-            src="/hero/athlete.webp"
-            alt=""
-            width={817}
-            height={1288}
-            fetchPriority="high"
-          />
-        </div>
-      )}
       <div className="word outline" aria-hidden="true">
         <SplitChars id="word-line" text={catalogue.hero.word} />
       </div>

@@ -1,4 +1,4 @@
-# A8: builds the hero tennis player from free, open assets. Run by `pnpm assets:character`:
+# A8: builds the hero athlete, a runner, from free, open assets. Run by `pnpm assets:character`:
 #   blender -b --factory-startup -P scripts/assets/character_mpfb.py -- <ual.glb> <out.glb> [preview dir]
 # The body, skin, hair and clothes come from MakeHuman (the MPFB add-on and its asset packs, CC0 and
 # CC-BY); the animations from Quaternius' Universal Animation Library (CC0). MPFB's "game engine" rig
@@ -13,21 +13,22 @@ from glob import glob
 import addon_utils
 import bmesh
 import bpy
-from mathutils import Matrix, Quaternion, Vector
+from mathutils import Matrix, Vector
 
 args = sys.argv[sys.argv.index("--") + 1 :]
 ual_glb, out_glb = args[0], args[1]
 preview_dir = args[2] if len(args) > 2 else None
 
-# The look: an athletic adult in a tennis kit. Asset names are matched by file name in MPFB's data.
-BODY = {"gender": 1.0, "age": 0.5, "muscle": 0.68, "weight": 0.45, "height": 0.6, "proportions": 0.6}
+# The look: a lean adult runner (the colours are set in build-character.mts). Asset names are matched
+# by file name in MPFB's data.
+BODY = {"gender": 1.0, "age": 0.5, "muscle": 0.85, "weight": 0.5, "height": 0.7, "proportions": 0.5}
 SKIN = "young_caucasian_male"
 EYES = "low-poly"
 BODYPARTS = ["eyebrow001", "eyelashes01"]
 HAIR = "short02"
-CLOTHES = ["namuhekam_male_polo_shirt", "elvs_male_trouser_short_1", "punkduck_running_shoes_01"]
-# Library clip → site clip. The sword stance and slash read as a ready position and a swing.
-CLIPS = {"Sword_Idle": "idle", "Sword_Attack": "swing"}
+CLOTHES = ["namuhekam_male_polo_shirt", "mindfront_male_swimming_trunks_01", "punkduck_running_shoes_01"]
+# Library clip → site clip: standing at rest, jogging while the page scrolls, a sprint on a colour change.
+CLIPS = {"Idle_Loop": "idle", "Jog_Fwd_Loop": "run", "Sprint_Loop": "swing"}
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
 scene = bpy.context.scene
@@ -68,16 +69,16 @@ for slot in next(o for o in human.parent.children if o.name.endswith(HAIR)).mate
 for pattern in CLOTHES:
     HumanService.add_mhclo_asset(find("clothes", pattern, ".mhclo"), human, asset_type="Clothes", subdiv_levels=0, material_type="GAMEENGINE")
 ExportService.bake_modifiers_remove_helpers(human, bake_masks=True)
-# Untucked, the shorts' waistband pokes through the shirt's hem when he bends. The shirt is tucked
-# in instead: everything more than a few centimetres below the waistband is cut away.
+# The shorts' waistband would poke through the shirt as he moves: the part of the shorts hidden
+# under the shirt (well above its hem) is cut away.
 shirt = next(o for o in rig.children if CLOTHES[0] in o.name)
 shorts = next(o for o in rig.children if CLOTHES[1] in o.name)
-waist = max((shorts.matrix_world @ v.co).z for v in shorts.data.vertices)
+hem = min((shirt.matrix_world @ v.co).z for v in shirt.data.vertices)
 mesh = bmesh.new()
-mesh.from_mesh(shirt.data)
-tucked = [v for v in mesh.verts if (shirt.matrix_world @ v.co).z < waist - 0.03]
-bmesh.ops.delete(mesh, geom=tucked, context="VERTS")
-mesh.to_mesh(shirt.data)
+mesh.from_mesh(shorts.data)
+hidden = [v for v in mesh.verts if (shorts.matrix_world @ v.co).z > hem + 0.07]
+bmesh.ops.delete(mesh, geom=hidden, context="VERTS")
+mesh.to_mesh(shorts.data)
 mesh.free()
 
 # Configure materials: opaque for skin, clothes, eyes; alpha clip only for hair/brows/lashes.
@@ -95,32 +96,6 @@ for mat in bpy.data.materials:
                         mat.node_tree.links.remove(link)
                     node.inputs["Alpha"].default_value = 1.0
 print("HUMAN", rig.name, len(rig.data.bones), [o.name for o in rig.children], flush=True)
-
-# --- the racket, for the preview only ----------------------------------------------------------
-# The site puts its own racket (racketKit: 2 units along +Y, strings in the XY plane, grip around
-# y = -0.75) in the right hand, placed from the finger joints in heroCharacter.ts; this is the same
-# placement, so the preview shows the swing with it. It isn't exported: the glTF exporter writes an
-# object parented to a bone in a frame three.js reads differently.
-RACKET_LENGTH = 0.685  # metres, a full-size racket
-bones = rig.data.bones
-hand = bones["hand_r"].head_local
-fingers = (bones["middle_01_r"].head_local - hand).normalized()
-across = bones["index_01_r"].head_local - bones["pinky_01_r"].head_local
-across = (across - fingers * across.dot(fingers)).normalized()
-palm = across.cross(fingers).normalized()
-up = (across + fingers * 0.5).normalized()
-side = up.cross(palm).normalized()
-scale = RACKET_LENGTH / 2
-grip = hand + fingers * (bones["middle_01_r"].head_local - hand).length * 0.55 + palm * 0.022
-socket = bpy.data.objects.new("racket_socket", None)
-scene.collection.objects.link(socket)
-socket.parent, socket.parent_type, socket.parent_bone = rig, "BONE", "hand_r"
-rig.data.pose_position = "REST"
-bpy.context.view_layer.update()
-basis = Matrix((side, up, palm)).transposed().to_4x4()
-basis.translation = grip + up * 0.75 * scale
-socket.matrix_world = rig.matrix_world @ basis @ Matrix.Scale(scale, 4)
-rig.data.pose_position = "POSE"
 
 # --- the animations --------------------------------------------------------------------------
 before = set(bpy.data.objects)
@@ -202,15 +177,6 @@ for o in library:
 if preview_dir:
     preview_dir = os.path.abspath(preview_dir)
     os.makedirs(preview_dir, exist_ok=True)
-    # A stand-in racket on the socket, in racketKit's units, only for the preview.
-    stand_in = []
-    for loc, size in (((0, -0.58, 0), (0.12, 0.76, 0.12)), ((0, 0.55, 0), (0.6, 0.84, 0.05))):
-        bpy.ops.mesh.primitive_cube_add(size=1, location=loc)
-        part = bpy.context.object
-        part.scale = size
-        part.parent = socket
-        part.matrix_parent_inverse = Matrix.Identity(4)
-        stand_in.append(part)
     cam = bpy.data.objects.new("cam", bpy.data.cameras.new("cam"))
     scene.collection.objects.link(cam)
     scene.camera = cam
@@ -231,19 +197,19 @@ if preview_dir:
     scene.view_settings.view_transform = "Standard"
     for track in rig.animation_data.nla_tracks:
         track.mute = True
+    # Each clip from the front three-quarter, the side and the back: the site turns him through 180°.
     for name in CLIPS.values():
         track = rig.animation_data.nla_tracks[name]
         track.mute = False
-        n = 6 if name == "swing" else 2
         end = track.strips[0].frame_end
-        for i in range(n):
-            scene.frame_set(int(end * i / n))
-            scene.render.filepath = f"{preview_dir}/{name}_{i}.png"
-            bpy.ops.render.render(write_still=True)
+        for a, turn in enumerate((0, 90, 180)):
+            rig.rotation_euler.z = math.radians(turn)
+            for i in range(2):
+                scene.frame_set(int(end * i / 2))
+                scene.render.filepath = f"{preview_dir}/{name}_{a}{i}.png"
+                bpy.ops.render.render(write_still=True)
+        rig.rotation_euler.z = 0
         track.mute = True
-    for part in stand_in:
-        bpy.data.objects.remove(part, do_unlink=True)
-bpy.data.objects.remove(socket, do_unlink=True)
 
 bpy.ops.export_scene.gltf(
     filepath=out_glb,
