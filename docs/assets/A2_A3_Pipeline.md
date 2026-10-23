@@ -75,7 +75,7 @@ pnpm assets:validate   # glTF Validator + budgets on everything in public/3d
 ![The runner in the hero: at rest, turning as the page scrolls (side, back), and the sprint on a colour change](A8_character_makehuman_preview.jpg)
 
 1. **Character generation:** Built in Blender 5.2 using MPFB2 (MakeHuman Plugin for Blender):
-   - Body: adult athlete's build (MPFB shape targets: broad shoulders and back, narrow waist and hips, muscular arms and legs, a more mature face), `young_caucasian_male` skin (CC0)
+   - Body: a young, slim-athletic runner modelled on the product owner's reference clip (MPFB shape targets: shoulders wider than the hips over a long torso, a flat chest, slim waist and hips, a slender neck, lean toned limbs with defined calves, a soft oval face), `young_caucasian_male` skin (CC0)
    - Hair: `short02` (CC0)
    - Eyes: `low-poly` (CC0)
    - Clothes: `namuhekam_male_polo_shirt` (CC0), `mindfront_male_swimming_trunks_01` (CC-BY) as running shorts, `punkduck_running_shoes_01` (CC-BY); `build-character.mts` colours the shorts dark, makes the shirt texture light grey for tinting and marks the shoes' accents in their texture's alpha; the site then dresses him in each colourway (`dress()` in `src/three/heroCharacter.ts`)

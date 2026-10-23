@@ -21,32 +21,38 @@ preview_dir = args[2] if len(args) > 2 else None
 
 # The look: a lean adult runner (the colours are set in build-character.mts). Asset names are matched
 # by file name in MPFB's data.
-BODY = {"gender": 1.0, "age": 0.55, "muscle": 0.85, "weight": 0.35, "height": 0.85, "proportions": 1.0}
+BODY = {"gender": 1.0, "age": 0.5, "muscle": 0.7, "weight": 0.42, "height": 0.72, "proportions": 1.0}
 # MakeHuman's macros alone leave a slight frame (narrow shoulders, soft chest, wide hips, a boyish
-# face): these shape targets give a lean, toned runner's build, like the campaign athlete, rather
-# than a bulky one. Target names are MPFB's (data/targets).
+# face). These shape targets follow the reference runner the product owner chose (a 10 s clip,
+# 23 Oct 2026): young and slim-athletic, moderate shoulders over a long torso and slim waist, a
+# slender neck, lean toned arms and thighs, defined calves, a soft oval face. Target names are
+# MPFB's (data/targets).
 SHAPE = {
-    # A runner's V: shoulders a little broad, a flat stomach, a narrow waist and hips.
-    "measure-shoulder-dist-incr": 0.5,
-    "torso-muscle-dorsi-incr": 0.5,
-    "torso-muscle-pectoral-incr": 0.4,
-    "measure-waist-circ-decr": 0.7,
-    "measure-hips-circ-decr": 0.6,
-    "stomach-pregnant-decr": 0.5,
-    "neck-scale-horiz-incr": 0.2,
-    # Toned, not bulky, arms; long legs with defined calves.
+    # A clear V over a long torso: shoulders wider than the hips, a flat chest, not bulky.
+    "torso-vshape-incr": 0.5,
+    "measure-shoulder-dist-incr": 0.55,
+    "measure-bust-circ-decr": 0.35,
+    "torso-muscle-pectoral-incr": 0.15,
+    "torso-muscle-dorsi-incr": 0.35,
+    "torso-scale-vert-incr": 0.2,
+    "measure-waist-circ-decr": 0.5,
+    "measure-hips-circ-decr": 0.7,
+    "stomach-pregnant-decr": 0.4,
+    # A slender, slightly longer neck.
+    "measure-neck-height-incr": 0.3,
+    "measure-neck-circ-decr": 0.2,
+    # Lean, toned arms and thighs; defined calves; a little more leg.
     **{f"{s}-upperarm-muscle-incr": 0.4 for s in "lr"},
-    **{f"{s}-upperarm-shoulder-muscle-incr": 0.2 for s in "lr"},
-    **{f"{s}-lowerarm-muscle-incr": 0.3 for s in "lr"},
-    **{f"{s}-upperleg-muscle-incr": 0.4 for s in "lr"},
-    **{f"{s}-lowerleg-muscle-incr": 0.5 for s in "lr"},
-    **{f"{s}-upperleg-scale-vert-incr": 0.3 for s in "lr"},
-    **{f"{s}-lowerleg-scale-vert-incr": 0.3 for s in "lr"},
-    # A more mature, defined face.
-    "head-age-incr": 0.4,
-    "head-square": 0.35,
-    "chin-width-incr": 0.35,
-    "chin-prominent-incr": 0.3,
+    **{f"{s}-upperarm-shoulder-muscle-incr": 0.25 for s in "lr"},
+    **{f"{s}-lowerarm-muscle-incr": 0.2 for s in "lr"},
+    **{f"{s}-upperleg-muscle-incr": 0.25 for s in "lr"},
+    **{f"{s}-lowerleg-muscle-incr": 0.45 for s in "lr"},
+    **{f"{s}-upperleg-scale-vert-incr": 0.15 for s in "lr"},
+    **{f"{s}-lowerleg-scale-vert-incr": 0.15 for s in "lr"},
+    # A young, soft oval face.
+    "head-oval": 0.4,
+    "head-age-decr": 0.15,
+    "chin-prominent-incr": 0.15,
 }
 SKIN = "young_caucasian_male"
 EYES = "low-poly"
@@ -112,7 +118,7 @@ mesh.to_mesh(shorts.data)
 mesh.free()
 # His shoulders and back would push past the shirt as he moves: it sits a few millimetres out.
 push = shirt.modifiers.new("Over the muscles", "DISPLACE")
-push.strength, push.mid_level = 0.01, 0
+push.strength, push.mid_level = 0.004, 0
 bpy.context.view_layer.objects.active = shirt
 bpy.ops.object.modifier_move_to_index(modifier=push.name, index=0)
 
