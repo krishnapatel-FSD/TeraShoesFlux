@@ -206,6 +206,11 @@ export function createStage(
   // 2.5 s), and only while the hero is on screen, so it never holds up an animation elsewhere on the
   // page (B6). It then pops in the way the balls did.
   let character: HeroCharacter | null = null;
+  // His kit in the colourway's colours: shirt and shoe accents in its stripes, shoes in its knit.
+  const kitFor = (id: string) => {
+    const p = productById(id)!;
+    return { shirt: p.b, shoe: p.a, accent: p.b };
+  };
   let characterDue = false;
   const appear = { v: 0 };
   const loadCharacter = () => {
@@ -215,6 +220,7 @@ export function createStage(
       (c) => {
         if (disposed) return c.dispose();
         character = c;
+        c.dress(kitFor(current()));
         stage.add(c.root);
         gsap.to(appear, {
           v: 1,
@@ -652,6 +658,7 @@ export function createStage(
   setStageApi({
     show(id, animate, timeline) {
       rimTarget.set(productById(id)!.hl);
+      character?.dress(kitFor(id), animate && !reduce ? timeline : undefined);
       // The swap must not flicker: the shoe only spins into a colourway whose material is loaded.
       // (They all load right after the intro; until then it switches without the spin.)
       if (loaded && mats[id] && animate && timeline && !reduce) {

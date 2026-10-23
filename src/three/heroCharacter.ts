@@ -10,7 +10,8 @@ import { mark } from "@/motion/probe";
 //     faster the faster it scrolls
 //   - scroll: he turns through 180° as the hero scrolls away, front three-quarter to back
 //   - cursor: his body turns a little toward it and his head follows it
-//   - colour change: a short sprint, on the colour-change timeline (B3)
+//   - colour change: a short sprint, on the colour-change timeline (B3), as his kit changes to the
+//     colourway: shirt in its stripe colour, shoes in its knit with stripe-coloured accents
 //   - reduced motion (B7): holds the idle's first pose, facing the viewer; none of the above
 
 export const HERO_CHARACTER_URL = process.env.NEXT_PUBLIC_HERO_CHARACTER ?? "";
@@ -48,6 +49,14 @@ export interface HeroCharacter {
       scroll?: number;
     },
     popIn: number,
+  ): void;
+  /**
+   * Dresses him in a colourway's kit: at once, or blended on a colour-change timeline. Colours are
+   * CSS hex strings.
+   */
+  dress(
+    kit: { shirt: string; shoe: string; accent: string },
+    timeline?: gsap.core.Timeline,
   ): void;
   /** Adds the swing to a colour-change timeline. */
   swing(timeline: gsap.core.Timeline): void;
@@ -116,6 +125,42 @@ export async function loadHeroCharacter(url: string): Promise<HeroCharacter> {
   root.add(model);
   root.rotation.y = PLACE.turn;
   mark("character-loaded");
+
+  // The kit: the shirt's grey texture is tinted by its colour; the shoes' shader tints the dark knit
+  // upper (keeping its weave) and the accents marked in the texture's alpha by `pnpm assets:character`.
+  const materials: THREE.MeshStandardMaterial[] = [];
+  model.traverse((o) => {
+    const m = (o as THREE.Mesh).material as THREE.MeshStandardMaterial;
+    if ((o as THREE.Mesh).isMesh && !materials.includes(m)) materials.push(m);
+  });
+  const shirt = materials.find((m) => /polo/i.test(m.name));
+  const shoes = materials.find((m) => /running_shoes/i.test(m.name));
+  const knit = new THREE.Color();
+  const accent = new THREE.Color();
+  if (shoes)
+    shoes.onBeforeCompile = (shader) => {
+      shader.uniforms.uKnit = { value: knit };
+      shader.uniforms.uAccent = { value: accent };
+      shader.fragmentShader = shader.fragmentShader
+        .replace(
+          "#include <common>",
+          `#include <common>
+          uniform vec3 uKnit;
+          uniform vec3 uAccent;`,
+        )
+        .replace(
+          "#include <map_fragment>",
+          `#ifdef USE_MAP
+            vec4 texel = texture2D( map, vMapUv );
+            float accent = 1.0 - smoothstep( 0.6, 0.9, texel.a );
+            float lum = dot( texel.rgb, vec3( 0.2126, 0.7152, 0.0722 ) );
+            float upper = ( 1.0 - smoothstep( 0.04, 0.2, lum ) ) * ( 1.0 - accent );
+            vec3 kit = mix( texel.rgb, uKnit * ( 0.55 + lum * 6.0 ), upper );
+            diffuseColor.rgb *= mix( kit, uAccent * ( 0.5 + lum ), accent );
+          #endif`,
+        );
+    };
+  const target = new THREE.Color();
 
   // Head tracking: "head" in MakeHuman's rig, "mixamorigHead" in Mixamo's.
   let head: THREE.Bone | undefined;
@@ -200,6 +245,30 @@ export async function loadHeroCharacter(url: string): Promise<HeroCharacter> {
         undefined,
         0,
       );
+    },
+    dress(kit, timeline) {
+      const parts: [THREE.Color | undefined, string][] = [
+        [shirt?.color, kit.shirt],
+        [knit, kit.shoe],
+        [accent, kit.accent],
+      ];
+      for (const [colour, hex] of parts) {
+        if (!colour) continue;
+        target.set(hex);
+        if (timeline)
+          timeline.to(
+            colour,
+            {
+              r: target.r,
+              g: target.g,
+              b: target.b,
+              duration: 0.5,
+              ease: "power2.inOut",
+            },
+            0.3,
+          );
+        else colour.copy(target);
+      }
     },
     look: () => yaw,
     dispose() {

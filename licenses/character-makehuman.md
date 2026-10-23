@@ -12,7 +12,7 @@
 
 The MakeHuman asset repository gives the CC BY items' licence as "CC BY" without a version.
 
-**Changes:** the clothes fitted to the body and recoloured (shirt emerald, shorts dark, the shoes' yellow accents emerald), the part of the shorts hidden under the shirt removed, the animations retargeted onto MPFB's game-engine rig, the materials made matte, textures re-encoded as WebP (colour at 1024 px, detail maps at 256 px), and the geometry Meshopt-compressed.
+**Changes:** the clothes fitted to the body and recoloured (shorts dark; the shirt and shoes take each colourway's colours on the site, with the shoes' yellow accents marked for it), the part of the shorts hidden under the shirt removed, the animations retargeted onto MPFB's game-engine rig, the materials made matte, textures re-encoded as WebP (colour at 1024 px, detail maps at 256 px), and the geometry Meshopt-compressed.
 
 **Source files:** the asset packs are installed in MPFB's user data folder and `assets-src/` (both outside git), so they are not redistributed.
 

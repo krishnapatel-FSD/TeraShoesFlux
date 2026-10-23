@@ -69,7 +69,7 @@ Several *Done when* targets are stricter than the prototype. Meeting them change
 
 ### Phase B-3: the character (after Plan A's A8) (≈ 2 days)
 
-**Status (23 Oct 2026): done with the real character.** A MakeHuman runner (1.76 MB, replacing Mixamo's "Remy") runs at 60 fps: a relaxed idle at rest that blends into a jog while the page scrolls, a 180° turn as the hero scrolls away (front three-quarter to back, then he shrinks away before the header), his body and head following the cursor, and a sprint on a colour change. He loads after the intro, while the hero is on screen, so B2 and B6 keep their timings. `src/three/heroCharacter.ts` loads only when `public/3d/character/character.glb` exists.
+**Status (23 Oct 2026): done with the real character.** A MakeHuman runner (1.76 MB, replacing Mixamo's "Remy") runs at 60 fps: a relaxed idle at rest that blends into a jog while the page scrolls, a 180° turn as the hero scrolls away (front three-quarter to back, then he shrinks away before the header), his body and head following the cursor, and a sprint on a colour change, as his shirt and shoes blend to the new colourway (shirt in its stripe colour, shoes in its knit with stripe-coloured accents). He loads after the intro, while the hero is on screen, so B2 and B6 keep their timings. `src/three/heroCharacter.ts` loads only when `public/3d/character/character.glb` exists.
 - Idle loop, a swing on each colour change (added to the B3 timeline), head turning toward the cursor, still under reduced motion.
 - Tested with a dummy in Mixamo's format (`pnpm assets:character --dummy`): 60 fps on this laptop, head follows the cursor, the swing plays.
 - The placement is provisional until the latest prototype (OD-1) shows where the player stands.
