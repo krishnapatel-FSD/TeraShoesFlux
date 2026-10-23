@@ -37,17 +37,29 @@ describe("low-power mode", () => {
     expect(document.documentElement.dataset.motion).toBe("full");
   });
 
-  it("turns on when the battery is discharging", async () => {
+  it("turns on when the battery is discharging, without the 30 fps cap", async () => {
     const lp = await load({ charging: false });
     const onChange = vi.fn();
     lp.subscribeLowPower(onChange);
     lp.startPowerWatch();
     await vi.waitFor(() => expect(lp.isLowPowerMode()).toBe(true));
+    expect(lp.isFrameCapped()).toBe(false);
     expect(onChange).toHaveBeenCalledOnce();
     expect(document.documentElement.dataset.motion).toBe("low-power");
+    expect(document.documentElement.dataset.fps).toBeUndefined();
   });
 
-  it("turns on, and stays on, once frames average over 25 ms after the warm-up", async () => {
+  it("caps at 30 fps on a slow device, on battery too", async () => {
+    const lp = await load({ charging: false });
+    lp.startPowerWatch();
+    await vi.waitFor(() => expect(lp.isLowPowerMode()).toBe(true));
+    now = 5000;
+    for (let i = 0; i < 90; i++) lp.reportFrame(40);
+    expect(lp.isFrameCapped()).toBe(true);
+    expect(document.documentElement.dataset.fps).toBe("30");
+  });
+
+  it("turns on, and stays on, once a typical frame takes over 25 ms after the warm-up", async () => {
     const lp = await load();
     lp.startPowerWatch();
     for (let i = 0; i < 200; i++) lp.reportFrame(40); // during the warm-up: ignored
@@ -55,8 +67,20 @@ describe("low-power mode", () => {
     now = 5000;
     for (let i = 0; i < 90; i++) lp.reportFrame(40);
     expect(lp.isLowPowerMode()).toBe(true);
+    expect(lp.isFrameCapped()).toBe(true);
     for (let i = 0; i < 200; i++) lp.reportFrame(10);
     expect(lp.isLowPowerMode()).toBe(true);
+    expect(lp.isFrameCapped()).toBe(true);
+  });
+
+  it("stays off on a fast device after a one-off load freeze", async () => {
+    const lp = await load({ charging: true });
+    lp.startPowerWatch();
+    await Promise.resolve();
+    now = 5000;
+    for (let i = 0; i < 90; i++) lp.reportFrame(i === 40 ? 1000 : 16.7);
+    expect(lp.isFrameCapped()).toBe(false);
+    expect(lp.isLowPowerMode()).toBe(false);
   });
 
   it("never applies with reduced motion, which keeps its own behaviour", async () => {

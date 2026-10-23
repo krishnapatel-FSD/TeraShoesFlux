@@ -146,10 +146,10 @@ export function Tour() {
               id="a-story"
               role="button"
               tabIndex={0}
-              aria-label="Spin the shoe. You can also drag it to turn it."
+              aria-label="Play a 3D tour of the shoe: all the way round, its top and its sole. You can also drag it to turn and tip it."
             >
               <span className="tour-hint" aria-hidden="true">
-                Click to spin · Drag to turn
+                Click for a 3D tour · Drag to turn
               </span>
             </div>
           </div>

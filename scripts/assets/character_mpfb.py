@@ -21,27 +21,31 @@ preview_dir = args[2] if len(args) > 2 else None
 
 # The look: a lean adult runner (the colours are set in build-character.mts). Asset names are matched
 # by file name in MPFB's data.
-BODY = {"gender": 1.0, "age": 0.55, "muscle": 1.0, "weight": 0.55, "height": 0.8, "proportions": 1.0}
+BODY = {"gender": 1.0, "age": 0.55, "muscle": 0.85, "weight": 0.35, "height": 0.85, "proportions": 1.0}
 # MakeHuman's macros alone leave a slight frame (narrow shoulders, soft chest, wide hips, a boyish
-# face): these shape targets give an athlete's build. Target names are MPFB's (data/targets).
+# face): these shape targets give a lean, toned runner's build, like the campaign athlete, rather
+# than a bulky one. Target names are MPFB's (data/targets).
 SHAPE = {
-    # A V-taper: broad shoulders and back, a defined chest, a narrow waist and hips.
-    "measure-shoulder-dist-incr": 0.8,
-    "torso-muscle-dorsi-incr": 0.8,
-    "torso-muscle-pectoral-incr": 0.7,
-    "measure-waist-circ-decr": 0.5,
-    "measure-hips-circ-decr": 0.7,
-    "neck-scale-horiz-incr": 0.4,
-    # Muscular arms and legs.
-    **{f"{s}-upperarm-muscle-incr": 0.7 for s in "lr"},
-    **{f"{s}-upperarm-shoulder-muscle-incr": 0.35 for s in "lr"},
-    **{f"{s}-lowerarm-muscle-incr": 0.5 for s in "lr"},
-    **{f"{s}-upperleg-muscle-incr": 0.6 for s in "lr"},
-    **{f"{s}-lowerleg-muscle-incr": 0.6 for s in "lr"},
+    # A runner's V: shoulders a little broad, a flat stomach, a narrow waist and hips.
+    "measure-shoulder-dist-incr": 0.5,
+    "torso-muscle-dorsi-incr": 0.5,
+    "torso-muscle-pectoral-incr": 0.4,
+    "measure-waist-circ-decr": 0.7,
+    "measure-hips-circ-decr": 0.6,
+    "stomach-pregnant-decr": 0.5,
+    "neck-scale-horiz-incr": 0.2,
+    # Toned, not bulky, arms; long legs with defined calves.
+    **{f"{s}-upperarm-muscle-incr": 0.4 for s in "lr"},
+    **{f"{s}-upperarm-shoulder-muscle-incr": 0.2 for s in "lr"},
+    **{f"{s}-lowerarm-muscle-incr": 0.3 for s in "lr"},
+    **{f"{s}-upperleg-muscle-incr": 0.4 for s in "lr"},
+    **{f"{s}-lowerleg-muscle-incr": 0.5 for s in "lr"},
+    **{f"{s}-upperleg-scale-vert-incr": 0.3 for s in "lr"},
+    **{f"{s}-lowerleg-scale-vert-incr": 0.3 for s in "lr"},
     # A more mature, defined face.
-    "head-age-incr": 0.35,
-    "head-square": 0.4,
-    "chin-width-incr": 0.4,
+    "head-age-incr": 0.4,
+    "head-square": 0.35,
+    "chin-width-incr": 0.35,
     "chin-prominent-incr": 0.3,
 }
 SKIN = "young_caucasian_male"
@@ -106,9 +110,9 @@ hidden = [v for v in mesh.verts if (shorts.matrix_world @ v.co).z > hem + 0.07]
 bmesh.ops.delete(mesh, geom=hidden, context="VERTS")
 mesh.to_mesh(shorts.data)
 mesh.free()
-# The athlete's shoulders and back push past the shirt as he moves: it sits a few millimetres out.
+# His shoulders and back would push past the shirt as he moves: it sits a few millimetres out.
 push = shirt.modifiers.new("Over the muscles", "DISPLACE")
-push.strength, push.mid_level = 0.014, 0
+push.strength, push.mid_level = 0.01, 0
 bpy.context.view_layer.objects.active = shirt
 bpy.ops.object.modifier_move_to_index(modifier=push.name, index=0)
 

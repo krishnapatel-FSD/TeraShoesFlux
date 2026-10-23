@@ -46,6 +46,8 @@ export interface MotionProbe {
   frames: ProbeFrame[];
   timelines: ProbeTimeline[];
   marks: Record<string, number>;
+  /** Set by a test before the page loads: treat this device as slow (B7's 30 fps cap). */
+  slowDevice?: boolean;
 }
 
 declare global {

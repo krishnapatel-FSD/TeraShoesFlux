@@ -4,6 +4,7 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useRef, useSyncExternalStore } from "react";
 import type { PerspectiveCamera } from "three";
 import {
+  isFrameCapped,
   isLowPowerMode,
   reportFrame,
   startPowerWatch,
@@ -23,6 +24,11 @@ export function Scene() {
     isLowPowerMode,
     () => false,
   );
+  const capped = useSyncExternalStore(
+    subscribeLowPower,
+    isFrameCapped,
+    () => false,
+  );
   return (
     <Canvas
       id="gl"
@@ -36,14 +42,15 @@ export function Scene() {
         pointerEvents: "none",
         display: "block",
       }}
-      // Low-power mode (B7): pixel ratio 1, and frames on demand from FrameCap at 30 fps.
+      // Low-power mode (B7): pixel ratio 1; on a slow device also frames on demand from FrameCap at
+      // 30 fps.
       dpr={lowPower ? 1 : [1, 2]}
-      frameloop={lowPower ? "demand" : "always"}
+      frameloop={capped ? "demand" : "always"}
       camera={{ fov: 30, near: 0.1, far: 100, position: [0, 0, 10] }}
       gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
     >
       <StageRunner />
-      {lowPower && <FrameCap fps={30} />}
+      {capped && <FrameCap fps={30} />}
     </Canvas>
   );
 }

@@ -218,10 +218,25 @@ export function createStage(
     characterDue = false;
     if (!HERO_CHARACTER_URL || disposed) return;
     loadHeroCharacter(HERO_CHARACTER_URL).then(
-      (c) => {
+      async (c) => {
+        if (disposed) return c.dispose();
+        c.dress(kitFor(current()));
+        // Shaders compiled and textures uploaded ahead, a texture a frame: on its first frame they
+        // froze the page for most of a second.
+        await renderer.compileAsync(c.root, camera, scene).catch(() => {});
+        const textures = new Set<THREE.Texture>();
+        c.root.traverse((o) => {
+          const m = (o as THREE.Mesh).material as THREE.MeshStandardMaterial;
+          if ((o as THREE.Mesh).isMesh)
+            for (const t of [m.map, m.normalMap]) if (t) textures.add(t);
+        });
+        for (const t of textures) {
+          await new Promise((r) => requestAnimationFrame(r));
+          if (disposed) return c.dispose();
+          renderer.initTexture(t);
+        }
         if (disposed) return c.dispose();
         character = c;
-        c.dress(kitFor(current()));
         stage.add(c.root);
         gsap.to(appear, {
           v: 1,
@@ -366,7 +381,7 @@ export function createStage(
     for (const p of activeCatalogue().products) await ensure(p.id);
     if (disposed) return;
     if (mats[current()]) apply(current());
-    makeThumbs();
+    void makeThumbs();
   }
 
   const rectOf = (p: Pose) => {
@@ -429,7 +444,7 @@ export function createStage(
       : onScreenCap;
   }
 
-  function place(a: number, extraRy: number) {
+  function place(a: number, extraRy: number, extraRx = 0) {
     const i = Math.max(0, Math.min(P.length - 2, Math.floor(a)));
     const t = Math.min(1, Math.max(0, a - i));
     const A0 = P[i]!;
@@ -445,8 +460,9 @@ export function createStage(
         ? Math.max(0.0001, (pxToWorld(w) / 2) * (0.35 + 0.65 * vis))
         : 0.0001,
     );
+    // extraRx tips the shoe about the screen's horizontal axis: + shows its top, - its sole.
     tilt.rotation.set(
-      lerp(A0.rx, B0.rx, t),
+      lerp(A0.rx, B0.rx, t) + extraRx,
       lerp(A0.ry, B0.ry, t) + extraRy,
       lerp(A0.rz, B0.rz, t),
     );
@@ -476,36 +492,47 @@ export function createStage(
     });
   }
 
-  /* Drag to rotate, in the product viewer and in the 3D tour. In the tour a click (a press that
-     barely moves) also plays a spin: a full turn with a slight zoom, back to the chapter's pose. */
+  /* Drag to rotate, in the product viewer and in the 3D tour. In the tour, dragging up or down also
+     tips the shoe to its top or sole, and a click (a press that barely moves) plays the 3D tour: a
+     full turn with a slight zoom, then the top view, then the sole, and back to the chapter's pose. */
   let dragging = false;
-  const tourSpin = { turn: 0, zoom: 0 };
+  /** The click tour's own turn, tip and zoom, and the tip from dragging, on top of the pose. */
+  const tourSpin = { turn: 0, tip: 0, zoom: 0, dragTip: 0 };
+  /** How far the top and sole views tip the shoe (radians), and the most a drag tips it. */
+  const TIP = 1.35;
   let spinning: gsap.core.Timeline | null = null;
   const spinTour = () => {
     // Only while the shoe is docked in the tour, and never with reduced motion.
     if (reduce || S.a < POSE.tourFirst - 0.2 || S.a > POSE.viewer - 0.8) return;
     spinning?.kill();
     tourSpin.turn = 0;
+    const ease = "power2.inOut";
     spinning = gsap
       .timeline({ onComplete: () => void (tourSpin.turn = 0) })
+      // All the way round, with a slight zoom.
       .to(
         tourSpin,
-        { turn: Math.PI * 2, duration: 1.6, ease: "power3.inOut" },
+        { turn: Math.PI * 2, duration: 1.4, ease: "power3.inOut" },
         0,
       )
-      .to(
-        tourSpin,
-        { zoom: 1, duration: 0.8, ease: "power2.inOut", yoyo: true, repeat: 1 },
-        0,
-      );
+      .to(tourSpin, { zoom: 1, duration: 0.7, ease, yoyo: true, repeat: 1 }, 0)
+      // The top, held a moment, then the sole, then back.
+      .to(tourSpin, { tip: TIP, duration: 0.8, ease }, 1.5)
+      .to(tourSpin, { tip: -TIP, duration: 1.1, ease }, 2.7)
+      .to(tourSpin, { tip: 0, duration: 0.8, ease }, 4.2);
   };
   cleanups.push(() => spinning?.kill());
-  const draggable = (el: HTMLElement, onClick?: () => void) => {
+  const draggable = (
+    el: HTMLElement,
+    { onClick, tip = false }: { onClick?: () => void; tip?: boolean } = {},
+  ) => {
     let lastX = 0;
+    let lastY = 0;
     let moved = 0;
     listen(el, "pointerdown", (e) => {
       dragging = true;
       lastX = e.clientX;
+      lastY = e.clientY;
       moved = 0;
       el.setPointerCapture(e.pointerId);
       S.dragV = 0;
@@ -513,10 +540,18 @@ export function createStage(
     listen(el, "pointermove", (e) => {
       if (!dragging) return;
       const dx = e.clientX - lastX;
+      const dy = e.clientY - lastY;
       lastX = e.clientX;
-      moved += Math.abs(dx);
+      lastY = e.clientY;
+      moved += Math.abs(dx) + Math.abs(dy);
       S.drag += dx * 0.012;
       S.dragV = dx * 0.012;
+      // Dragging down brings the top toward you, up the sole.
+      if (tip)
+        tourSpin.dragTip = Math.max(
+          -TIP,
+          Math.min(TIP, tourSpin.dragTip + dy * 0.01),
+        );
     });
     const stop = (e: PointerEvent) => {
       if (!dragging) return;
@@ -529,7 +564,7 @@ export function createStage(
   draggable($("#a-pdp")!);
   const tourStage = $("#a-story");
   if (tourStage) {
-    draggable(tourStage, spinTour);
+    draggable(tourStage, { onClick: spinTour, tip: true });
     listen(tourStage, "keydown", (e) => {
       if (e.key !== "Enter" && e.key !== " ") return;
       e.preventDefault();
@@ -583,7 +618,13 @@ export function createStage(
       Math.min(1, Math.max(0, POSE.viewer - S.a));
     const drift =
       tourDrift({ viewport: H, tour: lastTour }) * TOUR_DRIFT * inTour;
-    place(S.a, S.turn + S.drag + drift + tourSpin.turn);
+    // A drag's tip eases back once let go, like its turn.
+    if (!dragging) tourSpin.dragTip *= 0.92;
+    place(
+      S.a,
+      S.turn + S.drag + drift + tourSpin.turn,
+      tourSpin.tip + tourSpin.dragTip,
+    );
     if (!reduce) {
       const heroAmt = Math.max(0, 1 - S.a);
       tilt.rotation.y +=
@@ -631,69 +672,78 @@ export function createStage(
     }
   }
 
-  /** Renders each colourway once into a 480×300 image for swatches, cards, bag and search. */
-  function makeThumbs() {
+  /**
+   * Renders each colourway once into a 480×300 image for swatches, cards, bag and search. One
+   * colourway per frame: all six in one frame (each uploading its textures and encoding an image)
+   * froze the page for about a second, which also tripped the slow-device check (B7).
+   */
+  async function makeThumbs() {
     const cw = renderer.domElement.width;
     const ch = renderer.domElement.height;
     if (!cw || !ch || !model) {
-      listen(window, "resize", makeThumbs, { once: true });
+      listen(window, "resize", () => void makeThumbs(), { once: true });
       return;
     }
     const out = document.createElement("canvas");
     out.width = 480;
     out.height = 300;
     const o2 = out.getContext("2d")!;
-    const h = halfH();
-    const w = h * camera.aspect;
-    const keep = shown;
-    const keepRim = rim.color.clone();
-    const ballsWere = ballGroup.visible;
     const thumbs: Record<string, string> = {};
-    ballGroup.visible = false;
-    if (character) character.root.visible = false;
-    root.visible = true;
-    activeCatalogue().products.forEach((p) => {
-      if (!apply(p.id)) return;
-      rim.color.set(p.hl);
-      root.position.set(0, 0, 0);
-      root.scale.setScalar(Math.min(w * 1.2, h * 1.6) / 2);
-      tilt.rotation.set(0.22, -0.45, 0.04);
-      tilt.position.set(0, 0, 0);
-      shadowMat.opacity = 0;
-      renderer.render(scene, camera);
-      const box = new THREE.Box3().setFromObject(model!);
-      const pts: THREE.Vector3[] = [];
-      for (const x of [box.min.x, box.max.x])
-        for (const y of [box.min.y, box.max.y])
-          for (const z of [box.min.z, box.max.z])
-            pts.push(new THREE.Vector3(x, y, z).project(camera));
-      const xs = pts.map((q) => ((q.x + 1) / 2) * cw);
-      const ys = pts.map((q) => ((1 - q.y) / 2) * ch);
-      const x0 = Math.min(...xs);
-      const x1 = Math.max(...xs);
-      const y0 = Math.min(...ys);
-      const y1 = Math.max(...ys);
-      const sw = Math.max(x1 - x0, (y1 - y0) * 1.6) * 1.1;
-      const shh = sw / 1.6;
-      o2.clearRect(0, 0, 480, 300);
-      o2.drawImage(
-        renderer.domElement,
-        (x0 + x1) / 2 - sw / 2,
-        (y0 + y1) / 2 - shh / 2,
-        sw,
-        shh,
-        0,
-        0,
-        480,
-        300,
-      );
-      thumbs[p.id] = out.toDataURL("image/png");
-    });
-    if (keep) apply(keep);
-    rim.color.copy(keepRim);
-    ballGroup.visible = ballsWere;
-    place(S.a, S.turn + S.drag);
-    renderer.render(scene, camera);
+    for (const p of activeCatalogue().products) {
+      await new Promise((r) => requestAnimationFrame(r));
+      if (disposed) return;
+      // The scene as it is, restored straight after, so the frame itself renders as normal.
+      const keep = shown;
+      const keepRim = rim.color.clone();
+      const ballsWere = ballGroup.visible;
+      const characterWas = character?.root.visible ?? false;
+      ballGroup.visible = false;
+      if (character) character.root.visible = false;
+      root.visible = true;
+      if (apply(p.id)) {
+        const h = halfH();
+        const w = h * camera.aspect;
+        rim.color.set(p.hl);
+        root.position.set(0, 0, 0);
+        root.scale.setScalar(Math.min(w * 1.2, h * 1.6) / 2);
+        tilt.rotation.set(0.22, -0.45, 0.04);
+        tilt.position.set(0, 0, 0);
+        shadowMat.opacity = 0;
+        renderer.render(scene, camera);
+        const box = new THREE.Box3().setFromObject(model!);
+        const pts: THREE.Vector3[] = [];
+        for (const x of [box.min.x, box.max.x])
+          for (const y of [box.min.y, box.max.y])
+            for (const z of [box.min.z, box.max.z])
+              pts.push(new THREE.Vector3(x, y, z).project(camera));
+        const xs = pts.map((q) => ((q.x + 1) / 2) * cw);
+        const ys = pts.map((q) => ((1 - q.y) / 2) * ch);
+        const x0 = Math.min(...xs);
+        const x1 = Math.max(...xs);
+        const y0 = Math.min(...ys);
+        const y1 = Math.max(...ys);
+        const sw = Math.max(x1 - x0, (y1 - y0) * 1.6) * 1.1;
+        const shh = sw / 1.6;
+        o2.clearRect(0, 0, 480, 300);
+        o2.drawImage(
+          renderer.domElement,
+          (x0 + x1) / 2 - sw / 2,
+          (y0 + y1) / 2 - shh / 2,
+          sw,
+          shh,
+          0,
+          0,
+          480,
+          300,
+        );
+        thumbs[p.id] = out.toDataURL("image/png");
+      }
+      if (keep) apply(keep);
+      rim.color.copy(keepRim);
+      ballGroup.visible = ballsWere;
+      if (character) character.root.visible = characterWas;
+      place(S.a, S.turn + S.drag);
+    }
     refreshImages(thumbs);
   }
 

@@ -27,16 +27,16 @@ describe("getMotionMode", () => {
 
 describe("isLowPower", () => {
   it("is on when running on battery", () => {
-    expect(isLowPower({ discharging: true, avgFrameMs: null })).toBe(true);
+    expect(isLowPower({ discharging: true, frameMs: null })).toBe(true);
   });
 
-  it("is on when frames average over 25 ms", () => {
-    expect(isLowPower({ discharging: false, avgFrameMs: 26 })).toBe(true);
-    expect(isLowPower({ discharging: false, avgFrameMs: 25 })).toBe(false);
+  it("is on when a typical frame takes over 25 ms", () => {
+    expect(isLowPower({ discharging: false, frameMs: 26 })).toBe(true);
+    expect(isLowPower({ discharging: false, frameMs: 25 })).toBe(false);
   });
 
-  it("is off when charging and there is no frame average yet", () => {
-    expect(isLowPower({ discharging: false, avgFrameMs: null })).toBe(false);
+  it("is off when charging and there is no frame time yet", () => {
+    expect(isLowPower({ discharging: false, frameMs: null })).toBe(false);
   });
 });
 
@@ -52,5 +52,12 @@ describe("FrameTimer", () => {
     expect(t.average()).toBe((20 + 30 + 60) / 3);
     t.reset();
     expect(t.average()).toBeNull();
+  });
+
+  it("gives the median, which one long freeze doesn't move", () => {
+    const t = new FrameTimer(5);
+    [16, 17, 16, 1000, 17].forEach((ms) => t.add(ms));
+    expect(t.median()).toBe(17);
+    expect(t.average()).toBeGreaterThan(200);
   });
 });

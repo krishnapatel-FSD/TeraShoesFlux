@@ -6,17 +6,31 @@ import type { MotionProbe } from "../src/motion/probe";
 // Run with `pnpm test:motion`: a production build on the real GPU. Timings are skipped on software
 // WebGL, which draws a few frames a second (GSAP then stretches every animation).
 
-/** Turns the probe on and fixes the battery state (the test machine may be unplugged). */
-async function withProbe(page: Page, { onBattery = false } = {}) {
-  await page.addInitScript((discharging) => {
-    window.__motionProbe = { frames: [], timelines: [], marks: {} };
-    const battery = Object.assign(new EventTarget(), {
-      charging: !discharging,
-    });
-    Object.defineProperty(navigator, "getBattery", {
-      value: () => Promise.resolve(battery),
-    });
-  }, onBattery);
+/**
+ * Turns the probe on and fixes the battery state (the test machine may be unplugged); `slowDevice`
+ * stands in a device whose frames average over 25 ms (B7's 30 fps cap).
+ */
+async function withProbe(
+  page: Page,
+  { onBattery = false, slowDevice = false } = {},
+) {
+  await page.addInitScript(
+    ([discharging, slow]) => {
+      window.__motionProbe = {
+        frames: [],
+        timelines: [],
+        marks: {},
+        slowDevice: slow,
+      };
+      const battery = Object.assign(new EventTarget(), {
+        charging: !discharging,
+      });
+      Object.defineProperty(navigator, "getBattery", {
+        value: () => Promise.resolve(battery),
+      });
+    },
+    [onBattery, slowDevice] as const,
+  );
 }
 
 const readProbe = (page: Page) =>
@@ -83,7 +97,26 @@ test("B2: the whole intro finishes within 2.5 s of the model loading", async ({
   expect(Math.abs(last.y - (anchor!.y + anchor!.height / 2))).toBeLessThan(40);
 });
 
-test("B7: on battery the scene drops to 30 fps, pixel ratio 1 and three balls", async ({
+/** Frames a second over 2 s, once the intro has played. */
+async function measureFps(page: Page) {
+  await expect
+    .poll(async () => "intro-balls" in lastEnds(await readProbe(page)), {
+      timeout: 60_000,
+    })
+    .toBe(true);
+  const from = await page.evaluate(() => performance.now());
+  await page.waitForTimeout(2000);
+  const frames = (await readProbe(page)).frames.filter((f) => f.t >= from);
+  const fps = (frames.length - 1) / ((frames.at(-1)!.t - frames[0]!.t) / 1000);
+  return { fps, frames };
+}
+const pixelRatio = (page: Page) =>
+  page.evaluate(() => {
+    const c = document.querySelector<HTMLCanvasElement>("#gl canvas")!;
+    return c.width / c.clientWidth;
+  });
+
+test("B7: on battery the scene keeps 60 fps, at pixel ratio 1 with three balls", async ({
   page,
 }) => {
   await withProbe(page, { onBattery: true });
@@ -93,26 +126,31 @@ test("B7: on battery the scene drops to 30 fps, pixel ratio 1 and three balls", 
     "data-motion",
     "low-power",
   );
-  await expect
-    .poll(async () => "intro-balls" in lastEnds(await readProbe(page)), {
-      timeout: 60_000,
-    })
-    .toBe(true);
+  const { fps, frames } = await measureFps(page);
+  console.log(`B7 on battery: ${fps.toFixed(1)} fps`);
+  expect(fps).toBeGreaterThan(50);
+  expect(frames.at(-1)!.balls).toBe(3);
+  expect(await pixelRatio(page)).toBe(1);
+});
 
-  const from = await page.evaluate(() => performance.now());
-  await page.waitForTimeout(2000);
-  const frames = (await readProbe(page)).frames.filter((f) => f.t >= from);
-  const fps = (frames.length - 1) / ((frames.at(-1)!.t - frames[0]!.t) / 1000);
+test("B7: a slow device drops to 30 fps, pixel ratio 1 and three balls", async ({
+  page,
+}) => {
+  await withProbe(page, { slowDevice: true });
+  await page.goto("/");
+  await skipOnSoftwareWebGL(page);
+  await expect(page.locator("html")).toHaveAttribute(
+    "data-motion",
+    "low-power",
+  );
+  await expect(page.locator("html")).toHaveAttribute("data-fps", "30");
+  const { fps, frames } = await measureFps(page);
   test.info().annotations.push({ type: "fps", description: fps.toFixed(1) });
-  console.log(`B7 low-power: ${fps.toFixed(1)} fps`);
+  console.log(`B7 slow device: ${fps.toFixed(1)} fps`);
   expect(fps).toBeGreaterThan(24);
   expect(fps).toBeLessThan(33);
   expect(frames.at(-1)!.balls).toBe(3);
-  const dpr = await page.evaluate(() => {
-    const c = document.querySelector<HTMLCanvasElement>("#gl canvas")!;
-    return c.width / c.clientWidth;
-  });
-  expect(dpr).toBe(1);
+  expect(await pixelRatio(page)).toBe(1);
 });
 
 test("B7: plugged in, the scene keeps full motion", async ({ page }) => {
@@ -192,8 +230,8 @@ for (const fps of [60, 30] as const) {
     page,
   }) => {
     test.setTimeout(120_000);
-    // 30 fps is the low-power cap (on battery).
-    await withProbe(page, { onBattery: fps === 30 });
+    // 30 fps is the cap on a slow device.
+    await withProbe(page, { slowDevice: fps === 30 });
     await page.goto("/");
     await skipOnSoftwareWebGL(page);
     await expect

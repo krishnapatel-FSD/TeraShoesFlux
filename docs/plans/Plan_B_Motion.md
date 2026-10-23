@@ -30,7 +30,7 @@ Several *Done when* targets are stricter than the prototype. Meeting them change
 |---|---|---|---|---|
 | 1 | **Motion test harness:** test-only hooks that report the shoe's screen position per frame and the duration of each timeline, so every *Done when* is measured, not eyeballed | B1–B7 | 1 d | Hooks exist only in test builds |
 | 2 | **Measure the intro:** a Playwright test asserting the intro finishes within 2.5 s of the model loading | B2 | 0.5 d | **≤ 2.5 s** (closes B2's open check) |
-| 3 | **Low-power mode:** detect battery discharging (Battery API) or a slow average frame time (> 25 ms), then cap at 30 fps, set pixel ratio 1 and show fewer balls. Reduced motion keeps today's behaviour. | B7 | 1 d | Unit test for the detector; e2e with emulated reduced motion confirms **nothing moves on its own** |
+| 3 | **Low-power mode:** detect battery discharging (Battery API) or a slow typical (median) frame time (> 25 ms), then set pixel ratio 1 and show fewer balls; cap at 30 fps on a slow device only (product-owner change, 23 Oct 2026: no cap on battery). Reduced motion keeps today's behaviour. | B7 | 1 d | Unit test for the detector; e2e with emulated reduced motion confirms **nothing moves on its own** |
 | 4 | **Reduced-motion audit:** check every looping animation (band drift, eyebrow pulse, viewer blob, hero drift, ball spin) | B7 | 0.5 d | e2e: no element's transform changes over 3 s with reduced motion on |
 | 5 | **Hero video fallback:** record a 10 s hero loop from the 3D scene (canvas capture in headless Chrome to WebM), encode MP4 **(GB-5)**, and show it with a poster frame when there's no WebGL | B8 | 1 d | e2e with WebGL off: **the page looks complete** (screenshot) |
 
